@@ -29,6 +29,7 @@ Class=Zstd_MTC;../Shared/Modules/M_ZSTD/Zstd_MTC.xojo_code;&h000000006EB357FF;&h
 Class=ZstdStructure;../Shared/Modules/M_ZSTD/ZstdStructure.xojo_code;&h0000000014D9F7FF;&h0000000037E7B7FF;false
 Class=CCTX;../Shared/Modules/M_ZSTD/CCTX.xojo_code;&h000000007B7767FF;&h0000000037E7B7FF;false
 Class=DCTX;../Shared/Modules/M_ZSTD/DCTX.xojo_code;&h000000001008CFFF;&h0000000037E7B7FF;false
+Class=CompressionTestGroup;../Shared/Compression Tests/CompressionTestGroup.xojo_code;&h000000001D9837FF;&h000000001D2D17FF;false
 DefaultWindow=XojoUnitTestWindow
 AppMenuBar=XojoUnitMenuBar
 MajorVersion=1

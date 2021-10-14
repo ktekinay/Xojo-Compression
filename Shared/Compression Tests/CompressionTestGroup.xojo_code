@@ -1,73 +1,41 @@
 #tag Class
-Protected Class ZstdTests
-Inherits CompressionTestGroup
+Protected Class CompressionTestGroup
+Inherits TestGroup
 	#tag Event
 		Sub Setup()
-		  Z = new Zstd_MTC
+		  if BigData = "" then
+		    var f as FolderItem = SpecialFolder.Resource( "json_test.txt.zst" )
+		    var tis as TextInputStream = TextInputStream.Open( f )
+		    var compressed as string = tis.ReadAll
+		    tis.Close
+		    tis = nil
+		    
+		    var z as new Zstd_MTC
+		    mBigData = z.Decompress( compressed, Encodings.UTF8 )
+		  end if
+		  
+		  RaiseEvent Setup
 		  
 		End Sub
 	#tag EndEvent
 
 
-	#tag Method, Flags = &h0
-		Sub CompressTest()
-		  var s as string = BigData
-		  
-		  Assert.Message "s.Bytes = " + s.Bytes.ToString
-		  var compressed as string 
-		  for i as integer = 1 to 2
-		    self.StartTestTimer( "compress" )
-		    compressed = Z.Compress( s )
-		    self.LogTestTimer( "compress" )
-		  next i
-		  Assert.Message "compressed.Bytes = " + compressed.Bytes.ToString
-		  var ratio as double = 100.0 - ( ( compressed.Bytes / s.Bytes ) * 100.0 )
-		  Assert.Message "compression = " + ratio.ToString
-		  
-		  var decompressed as string
-		  for i as integer = 1 to 2
-		    self.StartTestTimer( "decompress" )
-		    decompressed = Z.Decompress( compressed, s.Encoding )
-		    self.LogTestTimer( "decompress" )
-		  next i
-		  
-		  Assert.AreSame s, decompressed
-		  
-		End Sub
-	#tag EndMethod
+	#tag Hook, Flags = &h0
+		Event Setup()
+	#tag EndHook
 
-	#tag Method, Flags = &h0
-		Sub ErrorTest()
-		  var s as string = "something"
-		  
-		  #pragma BreakOnExceptions false
-		  try
-		    call Z.Decompress( s )
-		    Assert.Fail "Did not raise an exception"
-		  catch err as RuntimeException
-		    Assert.Pass
-		  end try
-		  #pragma BreakOnExceptions default
-		  
-		End Sub
-	#tag EndMethod
 
-	#tag Method, Flags = &h0
-		Sub VersionTest()
-		  var v as UInteger = Z.Version
-		  Assert.IsTrue v <> 0
-		  Assert.Message v.ToString
-		  
-		  var s as string = Z.VersionString
-		  Assert.AreNotEqual "", s
-		  Assert.Message s
-		  
-		End Sub
-	#tag EndMethod
-
+	#tag ComputedProperty, Flags = &h1
+		#tag Getter
+			Get
+			  Return mBigData
+			End Get
+		#tag EndGetter
+		Protected Shared BigData As String
+	#tag EndComputedProperty
 
 	#tag Property, Flags = &h21
-		Private Z As Zstd_MTC
+		Attributes( Hidden ) Private Shared mBigData As String
 	#tag EndProperty
 
 
