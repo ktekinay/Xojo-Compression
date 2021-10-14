@@ -20,6 +20,79 @@ Inherits TestGroup
 	#tag EndEvent
 
 
+	#tag Method, Flags = &h1
+		Protected Function Compress(data As String, level As Integer, tag As Variant = Nil) As String
+		  StartTestTimer "compress"
+		  var compressed as string = RaiseEvent CompressData( data, level, tag )
+		  LogTestTimer "compress"
+		  
+		  return compressed
+		  
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub CompressDefaultTest()
+		  DoCompress CompressTestLevel
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub CompressFastTest()
+		  DoCompress 1
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h1
+		Protected Function Decompress(data As String, originalSize As Integer, encoding As TextEncoding = Nil, tag As Variant = Nil) As String
+		  StartTestTimer "decompressed"
+		  var decompressed as string = RaiseEvent DecompressData( data, originalSize, encoding, tag )
+		  LogTestTimer "decompressed"
+		  
+		  return decompressed
+		  
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub DoCompress(level As Integer)
+		  const kFormat as string = "#,##0"
+		  
+		  var s as string = BigData
+		  var sBytes as integer = s.Bytes
+		  
+		  Assert.Message "s.Bytes = " + sBytes.ToString( kFormat )
+		  Assert.Message "Compression Level = " + level.ToString
+		  
+		  var compressed as string 
+		  for i as integer = 1 to 2
+		    compressed = Compress( s, level )
+		  next i
+		  Assert.Message "compressed.Bytes = " + compressed.Bytes.ToString( kFormat )
+		  var ratio as double = 100.0 - ( ( compressed.Bytes / s.Bytes ) * 100.0 )
+		  Assert.Message "compression = " + ratio.ToString + "%"
+		  
+		  var decompressed as string
+		  for i as integer = 1 to 2
+		    decompressed = Decompress( compressed, s.Bytes, s.Encoding )
+		  next i
+		  
+		  Assert.AreSame s, decompressed
+		  
+		End Sub
+	#tag EndMethod
+
+
+	#tag Hook, Flags = &h0, Description = 436F6D70726573732074686520676976656E20646174612061742074686520676976656E206C6576656C2E
+		Event CompressData(data As String, level As Integer, tag As Variant) As String
+	#tag EndHook
+
+	#tag Hook, Flags = &h0, Description = 4465636F6D70726573732074686520676976656E20646174612E
+		Event DecompressData(data As String, originalSize As Integer, encoding As TextEncoding, tag As Variant) As String
+	#tag EndHook
+
 	#tag Hook, Flags = &h0
 		Event Setup()
 	#tag EndHook
@@ -33,6 +106,10 @@ Inherits TestGroup
 		#tag EndGetter
 		Protected Shared BigData As String
 	#tag EndComputedProperty
+
+	#tag Property, Flags = &h1
+		Protected CompressTestLevel As Integer
+	#tag EndProperty
 
 	#tag Property, Flags = &h21
 		Attributes( Hidden ) Private Shared mBigData As String

@@ -1,40 +1,32 @@
 #tag Class
 Protected Class ZstdTests
 Inherits CompressionTestGroup
+	#tag Event , Description = 436F6D70726573732074686520676976656E20646174612061742074686520676976656E206C6576656C2E
+		Function CompressData(data As String, level As Integer, tag As Variant) As String
+		  #pragma unused tag
+		  
+		  return Z.Compress( data, level )
+		  
+		End Function
+	#tag EndEvent
+
+	#tag Event , Description = 4465636F6D70726573732074686520676976656E20646174612E
+		Function DecompressData(data As String, originalSize As Integer, encoding As TextEncoding, tag As Variant) As String
+		  #pragma unused originalSize
+		  #pragma unused tag
+		  
+		  return Z.Decompress( data, encoding )
+		End Function
+	#tag EndEvent
+
 	#tag Event
 		Sub Setup()
 		  Z = new Zstd_MTC
+		  CompressTestLevel = Z.LevelDefault
 		  
 		End Sub
 	#tag EndEvent
 
-
-	#tag Method, Flags = &h0
-		Sub CompressTest()
-		  var s as string = BigData
-		  
-		  Assert.Message "s.Bytes = " + s.Bytes.ToString
-		  var compressed as string 
-		  for i as integer = 1 to 2
-		    self.StartTestTimer( "compress" )
-		    compressed = Z.Compress( s )
-		    self.LogTestTimer( "compress" )
-		  next i
-		  Assert.Message "compressed.Bytes = " + compressed.Bytes.ToString
-		  var ratio as double = 100.0 - ( ( compressed.Bytes / s.Bytes ) * 100.0 )
-		  Assert.Message "compression = " + ratio.ToString
-		  
-		  var decompressed as string
-		  for i as integer = 1 to 2
-		    self.StartTestTimer( "decompress" )
-		    decompressed = Z.Decompress( compressed, s.Encoding )
-		    self.LogTestTimer( "decompress" )
-		  next i
-		  
-		  Assert.AreSame s, decompressed
-		  
-		End Sub
-	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Sub ErrorTest()

@@ -1,31 +1,38 @@
 #tag Class
-Protected Class DesktopTestController
-Inherits TestController
+Protected Class GzipTests
+Inherits CompressionTestGroup
+	#tag Event , Description = 436F6D70726573732074686520676976656E20646174612061742074686520676976656E206C6576656C2E
+		Function CompressData(data As String, level As Integer, tag As Variant) As String
+		  #pragma unused tag
+		  
+		  return Gzip.Compress( data, level )
+		  
+		End Function
+	#tag EndEvent
+
+	#tag Event , Description = 4465636F6D70726573732074686520676976656E20646174612E
+		Function DecompressData(data As String, originalSize As Integer, encoding As TextEncoding, tag As Variant) As String
+		  #pragma unused tag
+		  
+		  var uncompressed as string = Gzip.Uncompress( data, originalSize )
+		  if encoding isa object then
+		    uncompressed = uncompressed.DefineEncoding( encoding )
+		  end if
+		  
+		  return uncompressed
+		  
+		End Function
+	#tag EndEvent
+
 	#tag Event
-		Sub InitializeTestGroups()
-		  // Instantiate TestGroup subclasses here so that they can be run
-		  
-		  Var group As TestGroup
-		  
-		  'group = New XojoUnitTests(Self, "Assertion")
-		  'group = New XojoUnitFailTests(Self, "Always Fail")
-		  
-		  group = new GzipTests( self, "Gzip" )
-		  group = new ZstdTests( self, "Zstd" )
+		Sub Setup()
+		  CompressTestLevel = Gzip.Z_DEFAULT_COMPRESSION
 		  
 		End Sub
 	#tag EndEvent
 
 
 	#tag ViewBehavior
-		#tag ViewProperty
-			Name="AllTestCount"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="Integer"
-			EditorType=""
-		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Duration"
 			Visible=false
@@ -35,7 +42,7 @@ Inherits TestController
 			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="FailedCount"
+			Name="FailedTestCount"
 			Visible=false
 			Group="Behavior"
 			InitialValue=""
@@ -43,10 +50,18 @@ Inherits TestController
 			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="GroupCount"
+			Name="IncludeGroup"
 			Visible=false
 			Group="Behavior"
-			InitialValue=""
+			InitialValue="True"
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Index"
+			Visible=true
+			Group="ID"
+			InitialValue="-2147483648"
 			Type="Integer"
 			EditorType=""
 		#tag EndViewProperty
@@ -56,54 +71,6 @@ Inherits TestController
 			Group="Behavior"
 			InitialValue=""
 			Type="Boolean"
-			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="NotImplementedCount"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="Integer"
-			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="PassedCount"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="Integer"
-			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="RunGroupCount"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="Integer"
-			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="RunTestCount"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="Integer"
-			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="SkippedCount"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="Integer"
-			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="Index"
-			Visible=true
-			Group="ID"
-			InitialValue="-2147483648"
-			Type="Integer"
 			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
@@ -123,11 +90,59 @@ Inherits TestController
 			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
+			Name="NotImplementedCount"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="PassedTestCount"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="RunTestCount"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="SkippedTestCount"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="StopTestOnFail"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
 			InitialValue=""
 			Type="String"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="TestCount"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Integer"
 			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
