@@ -1,7 +1,11 @@
 #tag Class
-Protected Class Zstd_MTC
+Class Zstd_MTC
 	#tag Method, Flags = &h0
 		Function Compress(src As MemoryBlock, compressionLevel As Integer = kLevelDefault) As String
+		  if CompressContext is nil then
+		    CompressContext = new CCTX
+		  end if
+		  
 		  var destSize as integer = CompressBound( src )
 		  var dest as new MemoryBlock( destSize )
 		  
@@ -52,12 +56,6 @@ Protected Class Zstd_MTC
 		Sub Constructor(defaultLevel As Integer = kLevelDefault)
 		  self.DefaultLevel = defaultLevel
 		  
-		  declare function ZSTD_createCCtx lib kLib () as ptr
-		  CompressContext = ZSTD_createCCtx
-		  
-		  declare function ZSTD_createDCtx lib kLib () as ptr
-		  DecompressContext = ZSTD_createDCtx
-		  
 		  MySemaphore = new Semaphore
 		  
 		End Sub
@@ -65,6 +63,10 @@ Protected Class Zstd_MTC
 
 	#tag Method, Flags = &h0
 		Function Decompress(src As MemoryBlock, encoding As TextEncoding = Nil) As String
+		  if DecompressContext is nil then
+		    DecompressContext = new DCTX
+		  end if
+		  
 		  var decompressedSize as UInteger = GetFrameContentSize( src )
 		  if decompressedSize = ZSTD_CONTENTSIZE_UNKNOWN then
 		    RaiseException "Unknown size, use streaming functions"
@@ -85,35 +87,6 @@ Protected Class Zstd_MTC
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
-		Private Sub Destructor()
-		  if CompressContext <> nil then
-		    declare function ZSTD_freeCCtx lib kLib ( cctx as ptr ) as UInteger
-		    var size as integer = ZSTD_freeCCtx( CompressContext )
-		    MaybeRaiseException size
-		    
-		    CompressContext = nil
-		  end if
-		  
-		  if DecompressContext <> nil then
-		    declare function ZSTD_freeDCtx lib kLib ( dctx as ptr ) as UInteger
-		    var size as integer = ZSTD_freeDCtx( DecompressContext )
-		    MaybeRaiseException size
-		    
-		    DecompressContext = nil
-		  end if
-		  
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h21
-		Private Shared Function GetErrorName(code As UInteger) As String
-		  declare function ZSTD_getErrorName lib kLib ( code as UInteger ) as CString
-		  return ZSTD_getErrorName( code )
-		  
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h21
 		Private Function GetFrameContentSize(src As MemoryBlock) As UInteger
 		  declare function ZSTD_getFrameContentSize lib kLib ( src as ptr, srcSize as UInteger ) as UInteger
 		  
@@ -127,47 +100,13 @@ Protected Class Zstd_MTC
 		End Function
 	#tag EndMethod
 
-	#tag Method, Flags = &h21
-		Private Shared Function IsError(code As UInteger) As Boolean
-		  declare function ZSTD_isError lib kLib ( code as UInteger ) as UInteger
-		  var result as UInteger = ZSTD_isError( code )
-		  
-		  const kZero as UInteger = 0
-		  return result <> kZero
-		  
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h21
-		Private Shared Sub MaybeRaiseException(code As UInteger, useMessage As String = "")
-		  if IsError( code ) then
-		    var msg as string = useMessage
-		    if msg = "" then
-		      msg = GetErrorName( code )
-		    end if
-		    
-		    RaiseException msg
-		  end if
-		  
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h21
-		Private Shared Sub RaiseException(msg As String)
-		  var err as new RuntimeException
-		  err.Message = msg
-		  raise err
-		  
-		End Sub
-	#tag EndMethod
-
 
 	#tag Property, Flags = &h21
-		Private CompressContext As Ptr
+		Private CompressContext As CCTX
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
-		Private DecompressContext As Ptr
+		Private DecompressContext As DCTX
 	#tag EndProperty
 
 	#tag Property, Flags = &h21
@@ -247,9 +186,6 @@ Protected Class Zstd_MTC
 	#tag EndConstant
 
 	#tag Constant, Name = kLevelFast, Type = Double, Dynamic = False, Default = \"1", Scope = Protected
-	#tag EndConstant
-
-	#tag Constant, Name = kLib, Type = String, Dynamic = False, Default = \"libzstd.dylib", Scope = Protected
 	#tag EndConstant
 
 	#tag Constant, Name = ZSTD_CONTENTSIZE_ERROR, Type = Double, Dynamic = False, Default = \"&hFFFFFFFFFFFFFFFE", Scope = Private
