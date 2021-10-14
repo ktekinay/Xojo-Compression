@@ -45,6 +45,20 @@ Inherits TestGroup
 		End Sub
 	#tag EndMethod
 
+	#tag Method, Flags = &h0
+		Sub CompressTinyTest()
+		  var s as string = "a"
+		  Assert.Message "s = " + s
+		  
+		  var compressed as string = Compress( s, 1 )
+		  Assert.Message "compressed.Bytes = " + compressed.Bytes.ToString
+		  
+		  var decompressed as string = Decompress( compressed, s.Bytes, Encodings.UTF8 )
+		  
+		  Assert.AreSame s, decompressed
+		End Sub
+	#tag EndMethod
+
 	#tag Method, Flags = &h1
 		Protected Function Decompress(data As String, originalSize As Integer, encoding As TextEncoding = Nil, tag As Variant = Nil) As String
 		  StartTestTimer "decompressed"
