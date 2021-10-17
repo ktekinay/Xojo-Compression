@@ -39,7 +39,11 @@ Class Zstd_MTC
 
 	#tag Method, Flags = &h0
 		Sub Constructor(defaultLevel As Integer = kLevelDefault)
-		  self.DefaultLevel = defaultLevel
+		  if defaultLevel = kLevelDefault then
+		    self.DefaultLevel = LevelDefault
+		  else
+		    self.DefaultLevel = defaultLevel
+		  end if
 		  
 		  MySemaphore = new Semaphore
 		  
@@ -101,7 +105,8 @@ Class Zstd_MTC
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  return kLevelDefault
+			  declare function ZSTD_defaultCLevel lib kLibZstd () as integer
+			  return ZSTD_defaultCLevel
 			  
 			End Get
 		#tag EndGetter
@@ -167,7 +172,7 @@ Class Zstd_MTC
 	#tag EndComputedProperty
 
 
-	#tag Constant, Name = kLevelDefault, Type = Double, Dynamic = False, Default = \"0", Scope = Protected
+	#tag Constant, Name = kLevelDefault, Type = Double, Dynamic = False, Default = \"-999999", Scope = Protected
 	#tag EndConstant
 
 	#tag Constant, Name = kLevelFast, Type = Double, Dynamic = False, Default = \"1", Scope = Protected
