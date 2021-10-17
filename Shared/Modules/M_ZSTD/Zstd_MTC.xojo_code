@@ -31,24 +31,9 @@ Class Zstd_MTC
 
 	#tag Method, Flags = &h21
 		Private Function CompressBound(src As MemoryBlock) As Integer
-		  const k8 as UInt64 = 2 ^ 8
-		  const k10 as UInt64 = 2 ^ 10
-		  const k11 as UInt64 = 2 ^ 11
-		  const kLimit as UInt64 = 128 * k10
+		  declare function ZSTD_compressBound lib kLib ( size as UInteger ) as UInteger
+		  return ZSTD_compressBound( src.Size )
 		  
-		  #if DebugBuild
-		    var debugLimit as UInt64 = kLimit
-		    #pragma unused debugLimit
-		  #endif
-		  
-		  var srcSize as UInt64 = src.Size
-		  
-		  // this formula ensures that bound(A) + bound(B) <= bound(A+B) as long as A and B >= 128 KB
-		  var bound as integer = _
-		  srcSize + ( srcSize \ k8 ) + if( srcSize < kLimit, ( kLimit - srcSize) \ k11, 0 )
-		  return bound
-		  
-		  // (srcSize + (srcSize>>8) + ((srcSize < (128<<10)) ? (((128<<10) - srcSize) >> 11) /* margin, from 64 to 0 */ : 0))  /* this formula ensures that bound(A) + bound(B) <= bound(A+B) as long as A and B >= 128 KB */
 		End Function
 	#tag EndMethod
 
