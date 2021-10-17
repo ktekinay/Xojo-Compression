@@ -1,5 +1,6 @@
 #tag Class
 Class Zstd_MTC
+Implements M_Compression.Compressor_MTC
 	#tag Method, Flags = &h0
 		Function Compress(src As MemoryBlock, compressionLevel As Integer = kLevelDefault) As String
 		  if CompressContext is nil then
@@ -48,6 +49,16 @@ Class Zstd_MTC
 		  MySemaphore = new Semaphore
 		  
 		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Function Decompress(src As MemoryBlock, originalSize As Integer, encoding As TextEncoding = Nil) As String
+		  // Part of Compressor_MTC interface
+		  
+		  #pragma unused originalSize
+		  return Decompress( src, encoding )
+		  
+		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
@@ -157,7 +168,7 @@ Class Zstd_MTC
 			  
 			End Get
 		#tag EndGetter
-		Version As Integer
+		Shared Version As Integer
 	#tag EndComputedProperty
 
 	#tag ComputedProperty, Flags = &h0
@@ -168,7 +179,7 @@ Class Zstd_MTC
 			  
 			End Get
 		#tag EndGetter
-		VersionString As String
+		Shared VersionString As String
 	#tag EndComputedProperty
 
 

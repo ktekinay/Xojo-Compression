@@ -30,6 +30,7 @@ Module=M_Compression;../Shared/Modules/M_Compression.xojo_code;&h0000000037E7B7F
 Class=Zstd_MTC;../Shared/Modules/M_Compression/Zstd_MTC.xojo_code;&h000000006EB357FF;&h0000000037E7B7FF;false
 Class=ZstdStructure;../Shared/Modules/M_Compression/ZstdStructure.xojo_code;&h0000000014D9F7FF;&h0000000037E7B7FF;false
 Class=CCTX;../Shared/Modules/M_Compression/CCTX.xojo_code;&h000000007B7767FF;&h0000000037E7B7FF;false
+Interface=Compressor_MTC;../Shared/Modules/M_Compression/Compressor_MTC.xojo_code;&h000000006FA4DFFF;&h0000000037E7B7FF;false
 Class=DCTX;../Shared/Modules/M_Compression/DCTX.xojo_code;&h000000001008CFFF;&h0000000037E7B7FF;false
 Module=Gzip;../Shared/Modules/Gzip.xojo_code;&h000000000F2D8974;&h000000007F0B4FFF;false
 DefaultWindow=XojoUnitTestWindow

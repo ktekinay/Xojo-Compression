@@ -14,6 +14,8 @@ Inherits TestGroup
 		    mBigData = z.Decompress( compressed, Encodings.UTF8 )
 		  end if
 		  
+		  self.Compressor = GetCompressor
+		  
 		  RaiseEvent Setup
 		  
 		End Sub
@@ -108,6 +110,10 @@ Inherits TestGroup
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
+		Event GetCompressor() As Compressor_MTC
+	#tag EndHook
+
+	#tag Hook, Flags = &h0
 		Event Setup()
 	#tag EndHook
 
@@ -120,6 +126,10 @@ Inherits TestGroup
 		#tag EndGetter
 		Protected Shared BigData As String
 	#tag EndComputedProperty
+
+	#tag Property, Flags = &h1
+		Protected Compressor As Compressor_MTC
+	#tag EndProperty
 
 	#tag Property, Flags = &h1
 		Protected CompressTestLevel As Integer
