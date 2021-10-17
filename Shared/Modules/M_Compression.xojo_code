@@ -1,8 +1,8 @@
 #tag Module
-Protected Module M_ZSTD
+Protected Module M_Compression
 	#tag Method, Flags = &h21
 		Private Function GetErrorName(code As UInteger) As String
-		  declare function ZSTD_getErrorName lib kLib ( code as UInteger ) as CString
+		  declare function ZSTD_getErrorName lib kLibZstd ( code as UInteger ) as CString
 		  return ZSTD_getErrorName( code )
 		  
 		End Function
@@ -10,7 +10,7 @@ Protected Module M_ZSTD
 
 	#tag Method, Flags = &h21
 		Private Function IsError(code As UInteger) As Boolean
-		  declare function ZSTD_isError lib kLib ( code as UInteger ) as UInteger
+		  declare function ZSTD_isError lib kLibZstd ( code as UInteger ) as UInteger
 		  var result as UInteger = ZSTD_isError( code )
 		  
 		  const kZero as UInteger = 0
@@ -43,7 +43,7 @@ Protected Module M_ZSTD
 	#tag EndMethod
 
 
-	#tag Constant, Name = kLib, Type = String, Dynamic = False, Default = \"libzstd.dylib", Scope = Protected
+	#tag Constant, Name = kLibZstd, Type = String, Dynamic = False, Default = \"libzstd.dylib", Scope = Protected
 	#tag EndConstant
 
 
