@@ -11,6 +11,12 @@ Protected Module M_Compression
 
 	#tag Method, Flags = &h21
 		Private Function ZstdGetErrorName(code As UInteger) As String
+		  #if TargetARM then
+		    const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		  #elseif TargetX86 then
+		    const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		  #endif
+		  
 		  declare function ZSTD_getErrorName lib kLibZstd ( code as UInteger ) as CString
 		  return ZSTD_getErrorName( code )
 		  
@@ -19,6 +25,12 @@ Protected Module M_Compression
 
 	#tag Method, Flags = &h21
 		Private Function ZstdIsError(code As UInteger) As Boolean
+		  #if TargetARM then
+		    const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		  #elseif TargetX86 then
+		    const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		  #endif
+		  
 		  declare function ZSTD_isError lib kLibZstd ( code as UInteger ) as UInteger
 		  var result as UInteger = ZSTD_isError( code )
 		  

@@ -12,6 +12,7 @@ Inherits CompressionTestGroup
 
 	#tag Event , Description = 4465636F6D70726573732074686520676976656E20646174612E
 		Function DecompressData(data As String, originalSize As Integer, encoding As TextEncoding, tag As Variant) As String
+		  #pragma unused originalSize
 		  #pragma unused tag
 		  
 		  var uncompressed as string = Compressor.Decompress( data, encoding )
@@ -30,7 +31,7 @@ Inherits CompressionTestGroup
 
 	#tag Event
 		Sub Setup()
-		  CompressTestLevel = Gzip.Z_DEFAULT_COMPRESSION
+		  CompressTestLevel = GZip_MTC.LevelDefault
 		  
 		End Sub
 	#tag EndEvent
