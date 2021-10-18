@@ -33,7 +33,6 @@ Class=ZstdStructure;../Shared/Modules/M_Compression/ZstdStructure.xojo_code;&h00
 Class=Zstd_MTC;../Shared/Modules/M_Compression/Zstd_MTC.xojo_code;&h000000006EB357FF;&h0000000037E7B7FF;false
 Interface=Compressor_MTC;../Shared/Modules/M_Compression/Compressor_MTC.xojo_code;&h000000006FA4DFFF;&h0000000037E7B7FF;false
 Class=Gzip_MTC;../Shared/Modules/M_Compression/Gzip_MTC.xojo_code;&h000000007AC557FF;&h0000000037E7B7FF;false
-Module=Gzip;../Shared/Modules/Gzip.xojo_code;&h000000000F2D8974;&h000000007F0B4FFF;false
 DefaultWindow=XojoUnitTestWindow
 AppMenuBar=XojoUnitMenuBar
 MajorVersion=1
