@@ -15,7 +15,7 @@ Inherits CompressionTestGroup
 		  #pragma unused originalSize
 		  #pragma unused tag
 		  
-		  return Compressor.Decompress( data, 0, encoding )
+		  return Compressor.Decompress( data, encoding )
 		End Function
 	#tag EndEvent
 
@@ -40,7 +40,7 @@ Inherits CompressionTestGroup
 		  
 		  #pragma BreakOnExceptions false
 		  try
-		    call Compressor.Decompress( s, 0 )
+		    call Compressor.Decompress( s )
 		    Assert.Fail "Did not raise an exception"
 		  catch err as RuntimeException
 		    Assert.Pass

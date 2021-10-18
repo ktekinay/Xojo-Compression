@@ -11,7 +11,7 @@ Private Class ZstdStructure
 		Private Sub Destructor()
 		  if MyPtr <> nil then
 		    var size as UInteger = RaiseEvent Destroy( MyPtr )
-		    MaybeRaiseException size
+		    ZstdMaybeRaiseException size
 		    
 		    MyPtr = nil
 		  end if

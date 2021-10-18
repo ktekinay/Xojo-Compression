@@ -5,7 +5,7 @@ Inherits CompressionTestGroup
 		Function CompressData(data As String, level As Integer, tag As Variant) As String
 		  #pragma unused tag
 		  
-		  return Gzip.Compress( data, level )
+		  return Compressor.Compress( data, level )
 		  
 		End Function
 	#tag EndEvent
@@ -14,12 +14,16 @@ Inherits CompressionTestGroup
 		Function DecompressData(data As String, originalSize As Integer, encoding As TextEncoding, tag As Variant) As String
 		  #pragma unused tag
 		  
-		  var uncompressed as string = Gzip.Uncompress( data, originalSize )
-		  if encoding isa object then
-		    uncompressed = uncompressed.DefineEncoding( encoding )
-		  end if
+		  var uncompressed as string = Compressor.Decompress( data, encoding )
 		  
 		  return uncompressed
+		  
+		End Function
+	#tag EndEvent
+
+	#tag Event
+		Function GetCompressor() As Compressor_MTC
+		  return new Gzip_MTC
 		  
 		End Function
 	#tag EndEvent
@@ -30,6 +34,15 @@ Inherits CompressionTestGroup
 		  
 		End Sub
 	#tag EndEvent
+
+
+	#tag Method, Flags = &h0
+		Sub VersionTest()
+		  var version as string = Gzip_MTC.Version
+		  Assert.AreNotEqual "", version
+		  Assert.Message version
+		End Sub
+	#tag EndMethod
 
 
 	#tag ViewBehavior

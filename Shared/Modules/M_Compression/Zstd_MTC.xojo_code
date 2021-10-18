@@ -3,6 +3,7 @@ Class Zstd_MTC
 Implements M_Compression.Compressor_MTC
 	#tag Method, Flags = &h0
 		Function Compress(src As MemoryBlock, compressionLevel As Integer = kLevelDefault) As String
+		  const kHeader as string = &u
 		  if CompressContext is nil then
 		    CompressContext = new CCTX
 		  end if
@@ -23,7 +24,7 @@ Implements M_Compression.Compressor_MTC
 		  MySemaphore.Signal
 		  var actualSize as UInteger = ZSTD_compressCCtx( CompressContext, dest, destSize, src, src.Size, compressionLevel )
 		  MySemaphore.Release
-		  MaybeRaiseException actualSize
+		  ZstdMaybeRaiseException actualSize
 		  
 		  return dest.StringValue( 0, actualSize )
 		  
@@ -49,16 +50,6 @@ Implements M_Compression.Compressor_MTC
 		  MySemaphore = new Semaphore
 		  
 		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h21
-		Private Function Decompress(src As MemoryBlock, originalSize As Integer, encoding As TextEncoding = Nil) As String
-		  // Part of Compressor_MTC interface
-		  
-		  #pragma unused originalSize
-		  return Decompress( src, encoding )
-		  
-		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
@@ -236,22 +227,6 @@ Implements M_Compression.Compressor_MTC
 			InitialValue="0"
 			Type="Integer"
 			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="Version"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="Integer"
-			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="VersionString"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="String"
-			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

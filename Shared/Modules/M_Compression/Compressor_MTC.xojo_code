@@ -7,7 +7,7 @@ Interface Compressor_MTC
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function Decompress(src As MemoryBlock, originalSize As Integer, encoding As TextEncoding = Nil) As String
+		Function Decompress(src As MemoryBlock, encoding As TextEncoding = Nil) As String
 		  
 		End Function
 	#tag EndMethod
