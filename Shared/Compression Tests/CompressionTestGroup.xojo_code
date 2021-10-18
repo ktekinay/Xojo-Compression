@@ -3,17 +3,6 @@ Protected Class CompressionTestGroup
 Inherits TestGroup
 	#tag Event
 		Sub Setup()
-		  if BigData = "" then
-		    var f as FolderItem = SpecialFolder.Resource( "json_test.txt.zst" )
-		    var tis as TextInputStream = TextInputStream.Open( f )
-		    var compressed as string = tis.ReadAll
-		    tis.Close
-		    tis = nil
-		    
-		    var z as new Zstd_MTC
-		    mBigData = z.Decompress( compressed, Encodings.UTF8 )
-		  end if
-		  
 		  self.Compressor = GetCompressor
 		  
 		  RaiseEvent Setup
@@ -118,13 +107,24 @@ Inherits TestGroup
 	#tag EndHook
 
 
-	#tag ComputedProperty, Flags = &h1
+	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  Return mBigData
+			  if mBigData = "" then
+			    var f as FolderItem = SpecialFolder.Resource( "json_test.txt.zst" )
+			    var tis as TextInputStream = TextInputStream.Open( f )
+			    var compressed as string = tis.ReadAll
+			    tis.Close
+			    tis = nil
+			    
+			    var z as new Zstd_MTC
+			    mBigData = z.Decompress( compressed, Encodings.UTF8 )
+			  end if
+			  
+			  return mBigData
 			End Get
 		#tag EndGetter
-		Protected Shared BigData As String
+		Shared BigData As String
 	#tag EndComputedProperty
 
 	#tag Property, Flags = &h1

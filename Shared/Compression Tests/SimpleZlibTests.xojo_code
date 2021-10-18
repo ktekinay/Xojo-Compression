@@ -1,5 +1,5 @@
 #tag Class
-Protected Class GzipTests
+Protected Class SimpleZlibTests
 Inherits CompressionTestGroup
 	#tag Event , Description = 436F6D70726573732074686520676976656E20646174612061742074686520676976656E206C6576656C2E
 		Function CompressData(data As String, level As Integer, tag As Variant) As String
@@ -24,14 +24,14 @@ Inherits CompressionTestGroup
 
 	#tag Event
 		Function GetCompressor() As Compressor_MTC
-		  return new Gzip_MTC
+		  return new SimpleZlib_MTC
 		  
 		End Function
 	#tag EndEvent
 
 	#tag Event
 		Sub Setup()
-		  CompressTestLevel = GZip_MTC.LevelDefault
+		  CompressTestLevel = SimpleZlib_MTC.LevelDefault
 		  
 		End Sub
 	#tag EndEvent
@@ -39,7 +39,7 @@ Inherits CompressionTestGroup
 
 	#tag Method, Flags = &h0
 		Sub VersionTest()
-		  var version as string = Gzip_MTC.Version
+		  var version as string = SimpleZlib_MTC.Version
 		  Assert.AreNotEqual "", version
 		  Assert.Message version
 		End Sub
