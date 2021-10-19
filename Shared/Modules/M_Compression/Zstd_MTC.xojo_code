@@ -3,10 +3,12 @@ Class Zstd_MTC
 Implements M_Compression.Compressor_MTC
 	#tag Method, Flags = &h0
 		Function Compress(src As MemoryBlock, compressionLevel As Integer = kLevelDefault) As String
-		  #if TargetARM then
-		    const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-		  #elseif TargetX86 then
-		    const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
 		  #endif
 		  
 		  if CompressContext is nil then
@@ -38,10 +40,12 @@ Implements M_Compression.Compressor_MTC
 
 	#tag Method, Flags = &h21
 		Private Function CompressBound(src As MemoryBlock) As Integer
-		  #if TargetARM then
-		    const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-		  #elseif TargetX86 then
-		    const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
 		  #endif
 		  
 		  declare function ZSTD_compressBound lib kLibZstd ( size as UInteger ) as UInteger
@@ -65,10 +69,12 @@ Implements M_Compression.Compressor_MTC
 
 	#tag Method, Flags = &h0
 		Function Decompress(src As MemoryBlock, encoding As TextEncoding = Nil) As String
-		  #if TargetARM then
-		    const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-		  #elseif TargetX86 then
-		    const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
 		  #endif
 		  
 		  if DecompressContext is nil then
@@ -96,10 +102,12 @@ Implements M_Compression.Compressor_MTC
 
 	#tag Method, Flags = &h21
 		Private Function GetFrameContentSize(src As MemoryBlock) As UInteger
-		  #if TargetARM then
-		    const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-		  #elseif TargetX86 then
-		    const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
 		  #endif
 		  
 		  declare function ZSTD_getFrameContentSize lib kLibZstd ( src as ptr, srcSize as UInteger ) as UInteger
@@ -130,10 +138,12 @@ Implements M_Compression.Compressor_MTC
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  #if TargetARM then
-			    const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-			  #elseif TargetX86 then
-			    const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+			  #if TargetMacOS then
+			    #if TargetARM then
+			      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+			    #elseif TargetX86 then
+			      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+			    #endif
 			  #endif
 			  
 			  declare function ZSTD_defaultCLevel lib kLibZstd () as integer
@@ -157,10 +167,12 @@ Implements M_Compression.Compressor_MTC
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  #if TargetARM then
-			    const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-			  #elseif TargetX86 then
-			    const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+			  #if TargetMacOS then
+			    #if TargetARM then
+			      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+			    #elseif TargetX86 then
+			      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+			    #endif
 			  #endif
 			  
 			  declare function ZSTD_maxCLevel lib kLibZstd () as integer
@@ -174,10 +186,12 @@ Implements M_Compression.Compressor_MTC
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  #if TargetARM then
-			    const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-			  #elseif TargetX86 then
-			    const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+			  #if TargetMacOS then
+			    #if TargetARM then
+			      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+			    #elseif TargetX86 then
+			      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+			    #endif
 			  #endif
 			  
 			  declare function ZSTD_minCLevel lib kLibZstd () as integer
@@ -195,10 +209,12 @@ Implements M_Compression.Compressor_MTC
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  #if TargetARM then
-			    const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-			  #elseif TargetX86 then
-			    const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+			  #if TargetMacOS then
+			    #if TargetARM then
+			      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+			    #elseif TargetX86 then
+			      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+			    #endif
 			  #endif
 			  
 			  declare function ZSTD_versionNumber lib kLibZstd () As UInteger
@@ -212,10 +228,12 @@ Implements M_Compression.Compressor_MTC
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  #if TargetARM then
-			    const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-			  #elseif TargetX86 then
-			    const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+			  #if TargetMacOS then
+			    #if TargetARM then
+			      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+			    #elseif TargetX86 then
+			      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+			    #endif
 			  #endif
 			  
 			  declare function ZSTD_versionString lib kLibZstd () As CString

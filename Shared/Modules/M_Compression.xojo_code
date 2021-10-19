@@ -11,10 +11,12 @@ Protected Module M_Compression
 
 	#tag Method, Flags = &h21
 		Private Function ZstdGetErrorName(code As UInteger) As String
-		  #if TargetARM then
-		    const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-		  #elseif TargetX86 then
-		    const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
 		  #endif
 		  
 		  declare function ZSTD_getErrorName lib kLibZstd ( code as UInteger ) as CString
@@ -25,10 +27,12 @@ Protected Module M_Compression
 
 	#tag Method, Flags = &h21
 		Private Function ZstdIsError(code As UInteger) As Boolean
-		  #if TargetARM then
-		    const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-		  #elseif TargetX86 then
-		    const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
 		  #endif
 		  
 		  declare function ZSTD_isError lib kLibZstd ( code as UInteger ) as UInteger
@@ -62,6 +66,8 @@ Protected Module M_Compression
 	#tag EndConstant
 
 	#tag Constant, Name = kLibZstd, Type = String, Dynamic = False, Default = \"libzstd.dylib", Scope = Private
+		#Tag Instance, Platform = Mac OS, Language = Default, Definition  = \"libzstd.dylib"
+		#Tag Instance, Platform = Windows, Language = Default, Definition  = \"libzstd.dll"
 	#tag EndConstant
 
 
