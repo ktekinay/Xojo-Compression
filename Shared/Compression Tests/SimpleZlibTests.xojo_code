@@ -1,23 +1,21 @@
 #tag Class
-Protected Class GzipTests
+Protected Class SimpleZlibTests
 Inherits CompressionTestGroup
 	#tag Event , Description = 436F6D70726573732074686520676976656E20646174612061742074686520676976656E206C6576656C2E
 		Function CompressData(data As String, level As Integer, tag As Variant) As String
 		  #pragma unused tag
 		  
-		  return Gzip.Compress( data, level )
+		  return Compressor.Compress( data, level )
 		  
 		End Function
 	#tag EndEvent
 
 	#tag Event , Description = 4465636F6D70726573732074686520676976656E20646174612E
 		Function DecompressData(data As String, originalSize As Integer, encoding As TextEncoding, tag As Variant) As String
+		  #pragma unused originalSize
 		  #pragma unused tag
 		  
-		  var uncompressed as string = Gzip.Uncompress( data, originalSize )
-		  if encoding isa object then
-		    uncompressed = uncompressed.DefineEncoding( encoding )
-		  end if
+		  var uncompressed as string = Compressor.Decompress( data, encoding )
 		  
 		  return uncompressed
 		  
@@ -25,11 +23,27 @@ Inherits CompressionTestGroup
 	#tag EndEvent
 
 	#tag Event
+		Function GetCompressor() As Compressor_MTC
+		  return new SimpleZlib_MTC
+		  
+		End Function
+	#tag EndEvent
+
+	#tag Event
 		Sub Setup()
-		  CompressTestLevel = Gzip.Z_DEFAULT_COMPRESSION
+		  CompressTestLevel = SimpleZlib_MTC.LevelDefault
 		  
 		End Sub
 	#tag EndEvent
+
+
+	#tag Method, Flags = &h0
+		Sub VersionTest()
+		  var version as string = SimpleZlib_MTC.Version
+		  Assert.AreNotEqual "", version
+		  Assert.Message version
+		End Sub
+	#tag EndMethod
 
 
 	#tag ViewBehavior

@@ -1,7 +1,16 @@
 #tag Class
 Class Zstd_MTC
+Implements M_Compression.Compressor_MTC
 	#tag Method, Flags = &h0
 		Function Compress(src As MemoryBlock, compressionLevel As Integer = kLevelDefault) As String
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
+		  #endif
+		  
 		  if CompressContext is nil then
 		    CompressContext = new CCTX
 		  end if
@@ -13,7 +22,7 @@ Class Zstd_MTC
 		    compressionLevel = DefaultLevel
 		  end if
 		  
-		  declare function ZSTD_compressCCtx lib kLib ( _
+		  declare function ZSTD_compressCCtx lib kLibZstd ( _
 		  cctx as ptr, _
 		  dst as ptr, dstCapacity as UInteger, _
 		  src as ptr, srcSize as UInteger, _
@@ -22,7 +31,7 @@ Class Zstd_MTC
 		  MySemaphore.Signal
 		  var actualSize as UInteger = ZSTD_compressCCtx( CompressContext, dest, destSize, src, src.Size, compressionLevel )
 		  MySemaphore.Release
-		  MaybeRaiseException actualSize
+		  ZstdMaybeRaiseException actualSize
 		  
 		  return dest.StringValue( 0, actualSize )
 		  
@@ -31,7 +40,15 @@ Class Zstd_MTC
 
 	#tag Method, Flags = &h21
 		Private Function CompressBound(src As MemoryBlock) As Integer
-		  declare function ZSTD_compressBound lib kLib ( size as UInteger ) as UInteger
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
+		  #endif
+		  
+		  declare function ZSTD_compressBound lib kLibZstd ( size as UInteger ) as UInteger
 		  return ZSTD_compressBound( src.Size )
 		  
 		End Function
@@ -39,7 +56,11 @@ Class Zstd_MTC
 
 	#tag Method, Flags = &h0
 		Sub Constructor(defaultLevel As Integer = kLevelDefault)
-		  self.DefaultLevel = defaultLevel
+		  if defaultLevel = kLevelDefault then
+		    self.DefaultLevel = LevelDefault
+		  else
+		    self.DefaultLevel = defaultLevel
+		  end if
 		  
 		  MySemaphore = new Semaphore
 		  
@@ -48,6 +69,14 @@ Class Zstd_MTC
 
 	#tag Method, Flags = &h0
 		Function Decompress(src As MemoryBlock, encoding As TextEncoding = Nil) As String
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
+		  #endif
+		  
 		  if DecompressContext is nil then
 		    DecompressContext = new DCTX
 		  end if
@@ -59,7 +88,7 @@ Class Zstd_MTC
 		  
 		  var dest as new MemoryBlock( decompressedSize )
 		  
-		  declare function ZSTD_decompressDCtx lib kLib ( dctx as ptr, dst as ptr, dstCapacity as UInteger, src as ptr, compressedSize as UInteger ) as UInteger
+		  declare function ZSTD_decompressDCtx lib kLibZstd ( dctx as ptr, dst as ptr, dstCapacity as UInteger, src as ptr, compressedSize as UInteger ) as UInteger
 		  
 		  MySemaphore.Signal
 		  var actualSize as UInteger = _
@@ -73,7 +102,15 @@ Class Zstd_MTC
 
 	#tag Method, Flags = &h21
 		Private Function GetFrameContentSize(src As MemoryBlock) As UInteger
-		  declare function ZSTD_getFrameContentSize lib kLib ( src as ptr, srcSize as UInteger ) as UInteger
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
+		  #endif
+		  
+		  declare function ZSTD_getFrameContentSize lib kLibZstd ( src as ptr, srcSize as UInteger ) as UInteger
 		  
 		  var size as UInteger = ZSTD_getFrameContentSize( src, src.Size )
 		  if size = ZSTD_CONTENTSIZE_ERROR then
@@ -101,7 +138,16 @@ Class Zstd_MTC
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  return kLevelDefault
+			  #if TargetMacOS then
+			    #if TargetARM then
+			      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+			    #elseif TargetX86 then
+			      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+			    #endif
+			  #endif
+			  
+			  declare function ZSTD_defaultCLevel lib kLibZstd () as integer
+			  return ZSTD_defaultCLevel
 			  
 			End Get
 		#tag EndGetter
@@ -121,7 +167,15 @@ Class Zstd_MTC
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  declare function ZSTD_maxCLevel lib kLib () as integer
+			  #if TargetMacOS then
+			    #if TargetARM then
+			      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+			    #elseif TargetX86 then
+			      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+			    #endif
+			  #endif
+			  
+			  declare function ZSTD_maxCLevel lib kLibZstd () as integer
 			  return ZSTD_maxCLevel
 			  
 			End Get
@@ -132,7 +186,15 @@ Class Zstd_MTC
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  declare function ZSTD_minCLevel lib kLib () as integer
+			  #if TargetMacOS then
+			    #if TargetARM then
+			      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+			    #elseif TargetX86 then
+			      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+			    #endif
+			  #endif
+			  
+			  declare function ZSTD_minCLevel lib kLibZstd () as integer
 			  return ZSTD_minCLevel
 			  
 			End Get
@@ -147,27 +209,43 @@ Class Zstd_MTC
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  declare function ZSTD_versionNumber lib kLib () As UInteger
+			  #if TargetMacOS then
+			    #if TargetARM then
+			      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+			    #elseif TargetX86 then
+			      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+			    #endif
+			  #endif
+			  
+			  declare function ZSTD_versionNumber lib kLibZstd () As UInteger
 			  return ZSTD_versionNumber()
 			  
 			End Get
 		#tag EndGetter
-		Version As Integer
+		Shared Version As Integer
 	#tag EndComputedProperty
 
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  declare function ZSTD_versionString lib kLib () As CString
+			  #if TargetMacOS then
+			    #if TargetARM then
+			      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+			    #elseif TargetX86 then
+			      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+			    #endif
+			  #endif
+			  
+			  declare function ZSTD_versionString lib kLibZstd () As CString
 			  return ZSTD_versionString()
 			  
 			End Get
 		#tag EndGetter
-		VersionString As String
+		Shared VersionString As String
 	#tag EndComputedProperty
 
 
-	#tag Constant, Name = kLevelDefault, Type = Double, Dynamic = False, Default = \"0", Scope = Protected
+	#tag Constant, Name = kLevelDefault, Type = Double, Dynamic = False, Default = \"-999999", Scope = Protected
 	#tag EndConstant
 
 	#tag Constant, Name = kLevelFast, Type = Double, Dynamic = False, Default = \"1", Scope = Protected
@@ -220,22 +298,6 @@ Class Zstd_MTC
 			InitialValue="0"
 			Type="Integer"
 			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="Version"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="Integer"
-			EditorType=""
-		#tag EndViewProperty
-		#tag ViewProperty
-			Name="VersionString"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="String"
-			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

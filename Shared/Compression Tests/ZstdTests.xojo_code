@@ -5,7 +5,7 @@ Inherits CompressionTestGroup
 		Function CompressData(data As String, level As Integer, tag As Variant) As String
 		  #pragma unused tag
 		  
-		  return Z.Compress( data, level )
+		  return Compressor.Compress( data, level )
 		  
 		End Function
 	#tag EndEvent
@@ -15,14 +15,20 @@ Inherits CompressionTestGroup
 		  #pragma unused originalSize
 		  #pragma unused tag
 		  
-		  return Z.Decompress( data, encoding )
+		  return Compressor.Decompress( data, encoding )
+		End Function
+	#tag EndEvent
+
+	#tag Event
+		Function GetCompressor() As Compressor_MTC
+		  return new Zstd_MTC
+		  
 		End Function
 	#tag EndEvent
 
 	#tag Event
 		Sub Setup()
-		  Z = new Zstd_MTC
-		  CompressTestLevel = Z.LevelDefault
+		  CompressTestLevel = Zstd_MTC.LevelDefault
 		  
 		End Sub
 	#tag EndEvent
@@ -34,7 +40,7 @@ Inherits CompressionTestGroup
 		  
 		  #pragma BreakOnExceptions false
 		  try
-		    call Z.Decompress( s )
+		    call Compressor.Decompress( s )
 		    Assert.Fail "Did not raise an exception"
 		  catch err as RuntimeException
 		    Assert.Pass
@@ -46,21 +52,16 @@ Inherits CompressionTestGroup
 
 	#tag Method, Flags = &h0
 		Sub VersionTest()
-		  var v as UInteger = Z.Version
+		  var v as UInteger = Zstd_MTC.Version
 		  Assert.IsTrue v <> 0
 		  Assert.Message v.ToString
 		  
-		  var s as string = Z.VersionString
+		  var s as string = Zstd_MTC.VersionString
 		  Assert.AreNotEqual "", s
 		  Assert.Message s
 		  
 		End Sub
 	#tag EndMethod
-
-
-	#tag Property, Flags = &h21
-		Private Z As Zstd_MTC
-	#tag EndProperty
 
 
 	#tag ViewBehavior

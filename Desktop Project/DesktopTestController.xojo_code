@@ -10,7 +10,8 @@ Inherits TestController
 		  'group = New XojoUnitTests(Self, "Assertion")
 		  'group = New XojoUnitFailTests(Self, "Always Fail")
 		  
-		  group = new GzipTests( self, "Gzip" )
+		  group = new SimpleZlibTests( self, "SimpleZlib" )
+		  group = new ZlibTests( self, "Zlib" )
 		  group = new ZstdTests( self, "Zstd" )
 		  
 		End Sub

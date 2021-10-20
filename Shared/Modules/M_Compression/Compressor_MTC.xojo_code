@@ -1,44 +1,16 @@
-#tag Class
-Private Class ZstdStructure
+#tag Interface
+Interface Compressor_MTC
 	#tag Method, Flags = &h0
-		Sub Constructor()
-		  MyPtr = RaiseEvent CreateStructure
-		  
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h21
-		Private Sub Destructor()
-		  if MyPtr <> nil then
-		    var size as UInteger = RaiseEvent Destroy( MyPtr )
-		    MaybeRaiseException size
-		    
-		    MyPtr = nil
-		  end if
-		  
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Attributes( Hidden )  Function Operator_Convert() As Ptr
-		  return MyPtr
+		Function Compress(src As MemoryBlock, Optional compressionLevel As Integer) As String
 		  
 		End Function
 	#tag EndMethod
 
-
-	#tag Hook, Flags = &h0, Description = 43726561746520616E6420696E697469616C697A652061206E6577207374727563747572652E
-		Event CreateStructure() As Ptr
-	#tag EndHook
-
-	#tag Hook, Flags = &h0, Description = 54686520636C61737320737472756374757265206E6565647320746F20626520746F726E20646F776E2E
-		Event Destroy(p As Ptr) As UInteger
-	#tag EndHook
-
-
-	#tag Property, Flags = &h21
-		Private MyPtr As Ptr
-	#tag EndProperty
+	#tag Method, Flags = &h0
+		Function Decompress(src As MemoryBlock, encoding As TextEncoding = Nil) As String
+		  
+		End Function
+	#tag EndMethod
 
 
 	#tag ViewBehavior
@@ -83,5 +55,5 @@ Private Class ZstdStructure
 			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
-End Class
-#tag EndClass
+End Interface
+#tag EndInterface
