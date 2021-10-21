@@ -127,6 +127,8 @@ Inherits M_Compression.ZstdStreamBase
 		  var inBuffer as ZstdBuffer = self.InBuffer
 		  var outBuffer as ZstdBuffer = self.OutBuffer
 		  
+		  var inBufferDataSize as integer = InBufferData.Size
+		  
 		  var dataRemaining as UInteger = self.DataRemaining
 		  var startingDataBufferBytes as integer = DataBufferBytes
 		  
@@ -149,7 +151,6 @@ Inherits M_Compression.ZstdStreamBase
 		      exit
 		    end if
 		    
-		    var remainingInBuffer as integer = InBufferData.Size
 		    var chunk as string
 		    
 		    if src = "" or inBuffer.Pos <> 0 then
@@ -161,13 +162,13 @@ Inherits M_Compression.ZstdStreamBase
 		      chunk = src.MiddleBytes( 0, dataRemaining )
 		      src = src.MiddleBytes( dataRemaining )
 		      
-		    elseif src.Bytes <= remainingInBuffer then
+		    elseif src.Bytes <= inBufferDataSize then
 		      chunk = src
 		      src = ""
 		      
 		    else
-		      chunk = src.MiddleBytes( 0, remainingInBuffer )
-		      src = src.MiddleBytes( remainingInBuffer )
+		      chunk = src.MiddleBytes( 0, inBufferDataSize )
+		      src = src.MiddleBytes( inBufferDataSize )
 		      
 		    end if
 		    

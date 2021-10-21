@@ -120,6 +120,13 @@ Inherits M_Compression.ZstdStreamBase
 		    #pragma StackOverflowChecking false
 		  #endif
 		  
+		  if src = "" then
+		    //
+		    // Nothing to do
+		    //
+		    return
+		  end if
+		  
 		  IsEndOfFile = false
 		  
 		  //
@@ -129,25 +136,41 @@ Inherits M_Compression.ZstdStreamBase
 		  var inBuffer as ZstdBuffer = self.InBuffer
 		  var outBuffer as ZstdBuffer = self.OutBuffer
 		  
+		  var inBufferDataSize as integer = InBufferData.Size
+		  
 		  var dataRemaining as UInteger = self.DataRemaining
 		  
-		  while src <> ""
-		    var remainingInBuffer as integer = InBufferData.Size - inBuffer.Pos
+		  var startingDataBufferBytes as integer = DataBufferBytes
+		  
+		  #if DebugBuild
+		    var loopCount as integer // For debugging
+		  #endif
+		  
+		  do
 		    var chunk as string
 		    
-		    if src.Bytes <= remainingInBuffer then
+		    if src = "" and inBuffer.Pos = 0 then
+		      exit
+		      
+		    elseif inBuffer.Pos <> 0 then
+		      //
+		      // Do nothing, has more to consume
+		      //
+		      inBuffer.Pos = inBuffer.Pos
+		      
+		    elseif src.Bytes <= inBufferDataSize then
 		      chunk = src
 		      src = ""
 		      
 		    else
-		      chunk = src.MiddleBytes( 0, remainingInBuffer )
-		      src = src.MiddleBytes( remainingInBuffer )
+		      chunk = src.MiddleBytes( 0, inBufferDataSize )
+		      src = src.MiddleBytes( inBufferDataSize )
 		      
 		    end if
 		    
 		    if chunk <> "" then
-		      InBufferData.StringValue( inBuffer.Pos, chunk.Bytes ) = chunk
-		      inBuffer.DataSize = InBuffer.Pos + chunk.Bytes
+		      InBufferData.StringValue( 0, chunk.Bytes ) = chunk
+		      inBuffer.DataSize = chunk.Bytes
 		    end if
 		    
 		    dataRemaining = CompressStream2( outBuffer, inBuffer, Directives.ContinueIt )
@@ -159,13 +182,20 @@ Inherits M_Compression.ZstdStreamBase
 		    
 		    if dataRemaining <> 0 then
 		      FlushBuffer outBuffer
-		      RaiseDataAvailable
 		    end if
-		  wend
+		    
+		    #if DebugBuild
+		      loopCount = loopCount + 1
+		    #endif
+		  loop
 		  
 		  self.InBuffer = inBuffer
 		  self.OutBuffer = outBuffer
 		  self.DataRemaining = dataRemaining
+		  
+		  if DataBufferBytes <> startingDataBufferBytes then
+		    RaiseDataAvailable
+		  end if
 		  
 		  
 		End Sub
