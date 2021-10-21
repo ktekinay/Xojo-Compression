@@ -1,6 +1,42 @@
 #tag Class
 Class ZstdStreamCompressor_MTC
 Inherits M_Compression.ZstdStreamBase
+	#tag Event
+		Sub DoReset()
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
+		  #endif
+		  
+		  var error as UInteger
+		  
+		  declare function ZSTD_initCStream lib kLibZstd ( zsc as ptr, compressionLevel as Int32 ) as UInteger
+		  error = ZSTD_initCStream( self.CompressContext, DefaultLevel )
+		  ZstdMaybeRaiseException error 
+		  
+		  var inbufferSize as UInteger = RecommendedChunkSize
+		  
+		  declare function ZSTD_CStreamOutSize lib kLibZstd () as UInteger
+		  var outBufferSize as UInteger = ZSTD_CStreamOutSize
+		  ZstdMaybeRaiseException outBufferSize
+		  
+		  InBufferData = new MemoryBlock( inBufferSize )
+		  OutBufferData = new MemoryBlock( outBufferSize )
+		  
+		End Sub
+	#tag EndEvent
+
+	#tag Event
+		Function DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer) As UInteger
+		  return CompressStream2( outBuffer, inBuffer, Directives.ContinueIt )
+		  
+		End Function
+	#tag EndEvent
+
+
 	#tag Method, Flags = &h21
 		Private Function CompressStream2(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer, directive As Directives) As UInteger
 		  #if TargetMacOS then
@@ -65,138 +101,6 @@ Inherits M_Compression.ZstdStreamBase
 		  end if
 		  
 		  Reset
-		  
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub Reset()
-		  #if TargetMacOS then
-		    #if TargetARM then
-		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-		    #elseif TargetX86 then
-		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
-		    #endif
-		  #endif
-		  
-		  super.Reset
-		  
-		  var error as UInteger
-		  
-		  declare function ZSTD_initCStream lib kLibZstd ( zsc as ptr, compressionLevel as Int32 ) as UInteger
-		  error = ZSTD_initCStream( self.CompressContext, DefaultLevel )
-		  ZstdMaybeRaiseException error 
-		  
-		  var inbufferSize as UInteger = RecommendedChunkSize
-		  
-		  declare function ZSTD_CStreamOutSize lib kLibZstd () as UInteger
-		  var outBufferSize as UInteger = ZSTD_CStreamOutSize
-		  ZstdMaybeRaiseException outBufferSize
-		  
-		  InBufferData = new MemoryBlock( inBufferSize )
-		  OutBufferData = new MemoryBlock( outBufferSize )
-		  
-		  InBuffer.Data = InBufferData
-		  InBuffer.DataSize = 0
-		  InBuffer.Pos = 0
-		  
-		  OutBuffer.Data = OutBufferData
-		  OutBuffer.DataSize = outBufferSize
-		  OutBuffer.Pos = 0
-		  
-		  IsEndOfFile = true
-		  
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub Write(src As String)
-		  // Part of the Writeable interface.
-		  
-		  #if not DebugBuild
-		    #pragma BoundsChecking false
-		    #pragma BreakOnExceptions false
-		    #pragma NilObjectChecking false
-		    #pragma StackOverflowChecking false
-		  #endif
-		  
-		  if src = "" then
-		    //
-		    // Nothing to do
-		    //
-		    return
-		  end if
-		  
-		  IsEndOfFile = false
-		  
-		  //
-		  // We have to split the src into chunks
-		  // and consume it all
-		  //
-		  var inBuffer as ZstdBuffer = self.InBuffer
-		  var outBuffer as ZstdBuffer = self.OutBuffer
-		  
-		  var inBufferDataSize as integer = InBufferData.Size
-		  
-		  var dataRemaining as UInteger = self.DataRemaining
-		  
-		  var startingDataBufferBytes as integer = DataBufferBytes
-		  
-		  #if DebugBuild
-		    var loopCount as integer // For debugging
-		  #endif
-		  
-		  do
-		    var chunk as string
-		    
-		    if src = "" and inBuffer.Pos = 0 then
-		      exit
-		      
-		    elseif inBuffer.Pos <> 0 then
-		      //
-		      // Do nothing, has more to consume
-		      //
-		      inBuffer.Pos = inBuffer.Pos
-		      
-		    elseif src.Bytes <= inBufferDataSize then
-		      chunk = src
-		      src = ""
-		      
-		    else
-		      chunk = src.MiddleBytes( 0, inBufferDataSize )
-		      src = src.MiddleBytes( inBufferDataSize )
-		      
-		    end if
-		    
-		    if chunk <> "" then
-		      InBufferData.StringValue( 0, chunk.Bytes ) = chunk
-		      inBuffer.DataSize = chunk.Bytes
-		    end if
-		    
-		    dataRemaining = CompressStream2( outBuffer, inBuffer, Directives.ContinueIt )
-		    
-		    if inBuffer.Pos = inBuffer.DataSize then
-		      inBuffer.Pos = 0
-		      inBuffer.DataSize = 0
-		    end if
-		    
-		    if dataRemaining <> 0 then
-		      FlushBuffer outBuffer
-		    end if
-		    
-		    #if DebugBuild
-		      loopCount = loopCount + 1
-		    #endif
-		  loop
-		  
-		  self.InBuffer = inBuffer
-		  self.OutBuffer = outBuffer
-		  self.DataRemaining = dataRemaining
-		  
-		  if DataBufferBytes <> startingDataBufferBytes then
-		    RaiseDataAvailable
-		  end if
-		  
 		  
 		End Sub
 	#tag EndMethod

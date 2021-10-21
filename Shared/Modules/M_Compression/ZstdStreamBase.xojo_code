@@ -20,6 +20,29 @@ Implements Readable, Writeable
 		End Sub
 	#tag EndMethod
 
+	#tag Method, Flags = &h21
+		Private Sub ConfirmWriteThreadId()
+		  var currentThreadID as integer = CurrentThreadID
+		  
+		  if WriteThreadID = currentThreadID then
+		    //
+		    // All good
+		    //
+		    
+		  elseif WriteThreadID = kThreadIdNone then
+		    //
+		    // Let's store it
+		    //
+		    WriteThreadID = currentThreadID
+		    
+		  else
+		    RaiseException "Cannot use the same object in different thread concurrently"
+		    
+		  end if
+		  
+		End Sub
+	#tag EndMethod
+
 	#tag Method, Flags = &h0
 		Function EndOfFile() As Boolean
 		  // Part of the Readable interface.
@@ -128,8 +151,21 @@ Implements Readable, Writeable
 		End Function
 	#tag EndMethod
 
-	#tag Method, Flags = &h0
-		Sub Reset()
+	#tag Method, Flags = &h1
+		Protected Sub Reset()
+		  RaiseEvent DoReset
+		  
+		  InBuffer.Data = InBufferData
+		  InBuffer.DataSize = 0
+		  InBuffer.Pos = 0
+		  
+		  OutBuffer.Data = OutBufferData
+		  OutBuffer.DataSize = OutBufferData.Size
+		  OutBuffer.Pos = 0
+		  
+		  IsEndOfFile = true
+		  
+		  WriteThreadID = kThreadIdNone
 		  
 		End Sub
 	#tag EndMethod
@@ -138,7 +174,101 @@ Implements Readable, Writeable
 		Sub Write(src As String)
 		  // Part of the Writeable interface.
 		  
-		  #pragma unused src
+		  #if not DebugBuild
+		    #pragma BoundsChecking false
+		    #pragma BreakOnExceptions false
+		    #pragma NilObjectChecking false
+		    #pragma StackOverflowChecking false
+		  #endif
+		  
+		  ConfirmWriteThreadId
+		  
+		  if src = "" then
+		    //
+		    // Nothing to do
+		    //
+		    return
+		  end if
+		  
+		  IsEndOfFile = false
+		  
+		  //
+		  // We have to split the src into chunks
+		  // and consume it all
+		  //
+		  var inBuffer as ZstdBuffer = self.InBuffer
+		  var outBuffer as ZstdBuffer = self.OutBuffer
+		  
+		  var inBufferDataSize as integer = InBufferData.Size
+		  
+		  var dataRemaining as UInteger = self.DataRemaining
+		  var startingDataBufferBytes as integer = DataBufferBytes
+		  
+		  #if DebugBuild
+		    var loopCount as integer // For debugging
+		  #endif
+		  
+		  var prevOutBufferPos as UInteger = outBuffer.Pos
+		  
+		  do
+		    #if DebugBuild
+		      if loopCount = 0 then
+		        loopCount = loopCount // A place to break
+		      end if
+		    #endif
+		    
+		    if outBuffer.Pos = outBuffer.DataSize then
+		      FlushBuffer outBuffer
+		    elseif outBuffer.Pos = prevOutBufferPos and src = "" then
+		      exit
+		    end if
+		    
+		    var chunk as string
+		    
+		    if src = "" or inBuffer.Pos <> 0 then
+		      //
+		      // Do nothing
+		      //
+		      
+		    elseif dataRemaining <> 0 then
+		      chunk = src.MiddleBytes( 0, dataRemaining )
+		      src = src.MiddleBytes( dataRemaining )
+		      
+		    elseif src.Bytes <= inBufferDataSize then
+		      chunk = src
+		      src = ""
+		      
+		    else
+		      chunk = src.MiddleBytes( 0, inBufferDataSize )
+		      src = src.MiddleBytes( inBufferDataSize )
+		      
+		    end if
+		    
+		    if chunk <> "" then
+		      InBufferData.StringValue( 0, chunk.Bytes ) = chunk
+		      inBuffer.DataSize = chunk.Bytes
+		    end if
+		    
+		    prevOutBufferPos = outBuffer.Pos
+		    dataRemaining = RaiseEvent DoWrite( outBuffer, inBuffer )
+		    
+		    if inBuffer.Pos = inBuffer.DataSize then
+		      inBuffer.Pos = 0
+		      inBuffer.DataSize = 0
+		    end if
+		    
+		    #if DebugBuild
+		      loopCount = loopCount + 1
+		    #endif
+		  loop
+		  
+		  self.InBuffer = inBuffer
+		  self.OutBuffer = outBuffer
+		  self.DataRemaining = dataRemaining
+		  
+		  if DataBufferBytes <> startingDataBufferBytes then
+		    RaiseDataAvailable
+		  end if
 		  
 		End Sub
 	#tag EndMethod
@@ -157,6 +287,30 @@ Implements Readable, Writeable
 		Event DataAvailable()
 	#tag EndHook
 
+	#tag Hook, Flags = &h0
+		Event DoReset()
+	#tag EndHook
+
+	#tag Hook, Flags = &h0
+		Event DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer) As UInteger
+	#tag EndHook
+
+
+	#tag ComputedProperty, Flags = &h21
+		#tag Getter
+			Get
+			  var th as Thread = Thread.Current
+			  
+			  if th is nil then
+			    return kThreadIdMain
+			  else
+			    return th.ThreadID
+			  end if
+			  
+			End Get
+		#tag EndGetter
+		Private CurrentThreadID As Integer
+	#tag EndComputedProperty
 
 	#tag Property, Flags = &h1
 		Protected DataBuffer() As String
@@ -199,6 +353,17 @@ Implements Readable, Writeable
 	#tag Property, Flags = &h1
 		Protected OutBufferData As MemoryBlock
 	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private WriteThreadID As Integer = kThreadIdNone
+	#tag EndProperty
+
+
+	#tag Constant, Name = kThreadIdMain, Type = Double, Dynamic = False, Default = \"-100", Scope = Private
+	#tag EndConstant
+
+	#tag Constant, Name = kThreadIdNone, Type = Double, Dynamic = False, Default = \"-10000000", Scope = Private
+	#tag EndConstant
 
 
 	#tag Structure, Name = ZstdBuffer, Flags = &h1

@@ -1,6 +1,42 @@
 #tag Class
 Class ZstdStreamDecompressor_MTC
 Inherits M_Compression.ZstdStreamBase
+	#tag Event
+		Sub DoReset()
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
+		  #endif
+		  
+		  var error as UInteger
+		  
+		  declare function ZSTD_initDStream lib kLibZstd ( zsc as ptr ) as UInteger
+		  error = ZSTD_initDStream( self.DecompressContext )
+		  ZstdMaybeRaiseException error 
+		  
+		  var inbufferSize as UInteger = RecommendedChunkSize
+		  
+		  declare function ZSTD_DStreamOutSize lib kLibZstd () as UInteger
+		  var outBufferSize as UInteger = ZSTD_DStreamOutSize
+		  ZstdMaybeRaiseException outBufferSize
+		  
+		  InBufferData = new MemoryBlock( inBufferSize )
+		  OutBufferData = new MemoryBlock( outBufferSize )
+		  
+		End Sub
+	#tag EndEvent
+
+	#tag Event
+		Function DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer) As UInteger
+		  return DecompressStream( outBuffer, inBuffer )
+		  
+		End Function
+	#tag EndEvent
+
+
 	#tag Method, Flags = &h0
 		Sub Constructor()
 		  super.Constructor( kLevelDefault )
@@ -56,147 +92,6 @@ Inherits M_Compression.ZstdStreamBase
 		  end if
 		  
 		  Reset
-		  
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub Reset()
-		  #if TargetMacOS then
-		    #if TargetARM then
-		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-		    #elseif TargetX86 then
-		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
-		    #endif
-		  #endif
-		  
-		  super.Reset
-		  
-		  var error as UInteger
-		  
-		  declare function ZSTD_initDStream lib kLibZstd ( zsc as ptr ) as UInteger
-		  error = ZSTD_initDStream( self.DecompressContext )
-		  ZstdMaybeRaiseException error 
-		  
-		  var inbufferSize as UInteger = RecommendedChunkSize
-		  
-		  declare function ZSTD_DStreamOutSize lib kLibZstd () as UInteger
-		  var outBufferSize as UInteger = ZSTD_DStreamOutSize
-		  ZstdMaybeRaiseException outBufferSize
-		  
-		  InBufferData = new MemoryBlock( inBufferSize )
-		  OutBufferData = new MemoryBlock( outBufferSize )
-		  
-		  InBuffer.Data = InBufferData
-		  InBuffer.DataSize = 0
-		  InBuffer.Pos = 0
-		  
-		  OutBuffer.Data = OutBufferData
-		  OutBuffer.DataSize = outBufferSize
-		  OutBuffer.Pos = 0
-		  
-		  IsEndOfFile = true
-		  
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub Write(src As String)
-		  // Part of the Writeable interface.
-		  
-		  #if not DebugBuild
-		    #pragma BoundsChecking false
-		    #pragma BreakOnExceptions false
-		    #pragma NilObjectChecking false
-		    #pragma StackOverflowChecking false
-		  #endif
-		  
-		  if src = "" then
-		    //
-		    // Nothing to do
-		    //
-		    return
-		  end if
-		  
-		  IsEndOfFile = false
-		  
-		  //
-		  // We have to split the src into chunks
-		  // and consume it all
-		  //
-		  var inBuffer as ZstdBuffer = self.InBuffer
-		  var outBuffer as ZstdBuffer = self.OutBuffer
-		  
-		  var inBufferDataSize as integer = InBufferData.Size
-		  
-		  var dataRemaining as UInteger = self.DataRemaining
-		  var startingDataBufferBytes as integer = DataBufferBytes
-		  
-		  #if DebugBuild
-		    var loopCount as integer // For debugging
-		  #endif
-		  
-		  var prevOutBufferPos as UInteger = outBuffer.Pos
-		  
-		  do
-		    #if DebugBuild
-		      if loopCount = 0 then
-		        loopCount = loopCount // A place to break
-		      end if
-		    #endif
-		    
-		    if outBuffer.Pos = outBuffer.DataSize then
-		      FlushBuffer outBuffer
-		    elseif outBuffer.Pos = prevOutBufferPos and src = "" then
-		      exit
-		    end if
-		    
-		    var chunk as string
-		    
-		    if src = "" or inBuffer.Pos <> 0 then
-		      //
-		      // Do nothing
-		      //
-		      
-		    elseif dataRemaining <> 0 then
-		      chunk = src.MiddleBytes( 0, dataRemaining )
-		      src = src.MiddleBytes( dataRemaining )
-		      
-		    elseif src.Bytes <= inBufferDataSize then
-		      chunk = src
-		      src = ""
-		      
-		    else
-		      chunk = src.MiddleBytes( 0, inBufferDataSize )
-		      src = src.MiddleBytes( inBufferDataSize )
-		      
-		    end if
-		    
-		    if chunk <> "" then
-		      InBufferData.StringValue( 0, chunk.Bytes ) = chunk
-		      inBuffer.DataSize = chunk.Bytes
-		    end if
-		    
-		    prevOutBufferPos = outBuffer.Pos
-		    dataRemaining = DecompressStream( outBuffer, inBuffer )
-		    
-		    if inBuffer.Pos = inBuffer.DataSize then
-		      inBuffer.Pos = 0
-		      inBuffer.DataSize = 0
-		    end if
-		    
-		    #if DebugBuild
-		      loopCount = loopCount + 1
-		    #endif
-		  loop
-		  
-		  self.InBuffer = inBuffer
-		  self.OutBuffer = outBuffer
-		  self.DataRemaining = dataRemaining
-		  
-		  if DataBufferBytes <> startingDataBufferBytes then
-		    RaiseDataAvailable
-		  end if
 		  
 		End Sub
 	#tag EndMethod
