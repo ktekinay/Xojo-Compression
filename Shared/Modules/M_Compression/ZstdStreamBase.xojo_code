@@ -65,6 +65,18 @@ Implements Readable, Writeable
 		Sub Flush()
 		  // Part of the Writeable interface.
 		  
+		  ConfirmWriteThreadId
+		  
+		  var startingDataBufferBytes as integer = DataBufferBytes
+		  
+		  FlushBuffer OutBuffer
+		  RaiseEvent DoFlush
+		  
+		  if DataBufferBytes <> startingDataBufferBytes then
+		    RaiseDataAvailable
+		  end if
+		  
+		  Reset
 		  
 		End Sub
 	#tag EndMethod
@@ -285,6 +297,10 @@ Implements Readable, Writeable
 
 	#tag Hook, Flags = &h0
 		Event DataAvailable()
+	#tag EndHook
+
+	#tag Hook, Flags = &h0
+		Event DoFlush()
 	#tag EndHook
 
 	#tag Hook, Flags = &h0

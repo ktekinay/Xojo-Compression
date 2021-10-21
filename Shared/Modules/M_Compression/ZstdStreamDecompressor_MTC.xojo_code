@@ -2,6 +2,21 @@
 Class ZstdStreamDecompressor_MTC
 Inherits M_Compression.ZstdStreamBase
 	#tag Event
+		Sub DoFlush()
+		  do
+		    DataRemaining = DecompressStream( OutBuffer, InBuffer )
+		    FlushBuffer OutBuffer
+		    
+		    if InBuffer.Pos >= InBuffer.DataSize then
+		      InBuffer.Pos = 0
+		      InBuffer.DataSize = 0
+		    end if
+		  loop until OutBuffer.Pos < OutBuffer.DataSize
+		  
+		End Sub
+	#tag EndEvent
+
+	#tag Event
 		Sub DoReset()
 		  #if TargetMacOS then
 		    #if TargetARM then
@@ -68,32 +83,6 @@ Inherits M_Compression.ZstdStreamBase
 		  return result
 		  
 		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub Flush()
-		  // Part of the Writeable interface.
-		  
-		  var startingBytes as integer = DataBufferBytes
-		  
-		  FlushBuffer OutBuffer
-		  do
-		    DataRemaining = DecompressStream( OutBuffer, InBuffer )
-		    FlushBuffer OutBuffer
-		    
-		    if InBuffer.Pos >= InBuffer.DataSize then
-		      InBuffer.Pos = 0
-		      InBuffer.DataSize = 0
-		    end if
-		  loop until OutBuffer.Pos < OutBuffer.DataSize
-		  
-		  if DataBufferBytes <> startingBytes then
-		    RaiseDataAvailable
-		  end if
-		  
-		  Reset
-		  
-		End Sub
 	#tag EndMethod
 
 

@@ -2,6 +2,29 @@
 Class ZstdStreamCompressor_MTC
 Inherits M_Compression.ZstdStreamBase
 	#tag Event
+		Sub DoFlush()
+		  do
+		    DataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.ContinueIt )
+		    FlushBuffer OutBuffer
+		    
+		    if InBuffer.Pos >= InBuffer.DataSize then
+		      InBuffer.Pos = 0
+		      InBuffer.DataSize = 0
+		    end if
+		  loop until DataRemaining = 0
+		  
+		  do
+		    DataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.FlushIt )
+		    FlushBuffer OutBuffer
+		  loop until DataRemaining = 0
+		  
+		  DataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.EndIt )
+		  FlushBuffer OutBuffer
+		  
+		End Sub
+	#tag EndEvent
+
+	#tag Event
 		Sub DoReset()
 		  #if TargetMacOS then
 		    #if TargetARM then
@@ -65,40 +88,6 @@ Inherits M_Compression.ZstdStreamBase
 	#tag Method, Flags = &h0
 		Sub Constructor(defaultLevel As Integer = kLevelDefault)
 		  super.Constructor( defaultLevel )
-		  
-		  Reset
-		  
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub Flush()
-		  // Part of the Writeable interface.
-		  
-		  var startingBytes as integer = DataBufferBytes
-		  
-		  FlushBuffer OutBuffer
-		  do
-		    DataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.ContinueIt )
-		    FlushBuffer OutBuffer
-		    
-		    if InBuffer.Pos >= InBuffer.DataSize then
-		      InBuffer.Pos = 0
-		      InBuffer.DataSize = 0
-		    end if
-		  loop until DataRemaining = 0
-		  
-		  do
-		    DataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.FlushIt )
-		    FlushBuffer OutBuffer
-		  loop until DataRemaining = 0
-		  
-		  DataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.EndIt )
-		  FlushBuffer OutBuffer
-		  
-		  if DataBufferBytes <> startingBytes then
-		    RaiseDataAvailable
-		  end if
 		  
 		  Reset
 		  
