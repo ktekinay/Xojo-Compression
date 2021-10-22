@@ -221,8 +221,6 @@ Implements Readable, Writeable
 		    var loopCount as integer // For debugging
 		  #endif
 		  
-		  var prevOutBufferPos as UInteger = outBuffer.Pos
-		  
 		  do
 		    #if DebugBuild
 		      if loopCount = 0 then
@@ -260,7 +258,6 @@ Implements Readable, Writeable
 		      exit
 		    end if
 		    
-		    prevOutBufferPos = outBuffer.Pos
 		    RaiseEvent DoWrite( outBuffer, inBuffer, dataRemaining )
 		    
 		    if inBuffer.Pos = inBuffer.DataSize then
