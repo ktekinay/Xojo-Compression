@@ -1,6 +1,6 @@
 #tag Class
 Class ZstdStreamCompressor_MTC
-Inherits M_Compression.ZstdStreamBase
+Inherits M_Compression.ZstdStream
 	#tag Event
 		Sub DoFlush()
 		  var dataRemaining as UInteger

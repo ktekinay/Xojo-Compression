@@ -1,5 +1,5 @@
 #tag Class
-Private Class ZstdStreamBase
+Protected Class ZstdStream
 Inherits ZstdBase
 Implements Readable, Writeable
 	#tag Method, Flags = &h1
@@ -38,6 +38,17 @@ Implements Readable, Writeable
 		  else
 		    RaiseException "Cannot use the same object in different thread concurrently"
 		    
+		  end if
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub Destructor()
+		  if DataAvailableTimer isa object then
+		    DataAvailableTimer.RunMode = Timer.RunModes.Off
+		    RemoveHandler DataAvailableTimer.Action, WeakAddressOf RaiseDataAvailable
+		    DataAvailableTimer = nil
 		  end if
 		  
 		End Sub
@@ -113,8 +124,28 @@ Implements Readable, Writeable
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
-		Protected Sub RaiseDataAvailable()
-		  RaiseEvent DataAvailable
+		Protected Sub RaiseDataAvailable(sender As Timer = Nil)
+		  //
+		  // Might be called directly or as part of the Timer
+		  //
+		  #pragma unused sender
+		  
+		  if IsDataAvailable then
+		    
+		    if CurrentThreadID = kThreadIdMain then
+		      RaiseEvent DataAvailable
+		      
+		    else
+		      //
+		      // Start the timer
+		      //
+		      if DataAvailableTimer.RunMode = Timer.RunModes.Off then
+		        DataAvailableTimer.RunMode = Timer.RunModes.Single
+		      end if
+		    end if
+		    
+		  end if
+		  
 		End Sub
 	#tag EndMethod
 
@@ -179,6 +210,14 @@ Implements Readable, Writeable
 		  IsEndOfFile = true
 		  
 		  WriteThreadID = kThreadIdNone
+		  
+		  if DataAvailableTimer is nil then
+		    DataAvailableTimer = new Timer
+		    DataAvailableTimer.Period = 1
+		    AddHandler DataAvailableTimer.Action, WeakAddressOf RaiseDataAvailable
+		  end if
+		  
+		  DataAvailableTimer.RunMode = Timer.RunModes.Off
 		  
 		End Sub
 	#tag EndMethod
@@ -342,6 +381,10 @@ Implements Readable, Writeable
 		Private CurrentThreadID As Integer
 	#tag EndComputedProperty
 
+	#tag Property, Flags = &h21
+		Private DataAvailableTimer As Timer
+	#tag EndProperty
+
 	#tag Property, Flags = &h1
 		Protected DataBuffer() As String
 	#tag EndProperty
@@ -362,7 +405,6 @@ Implements Readable, Writeable
 		#tag Getter
 			Get
 			  return DataBufferBytes <> 0
-			  
 			End Get
 		#tag EndGetter
 		IsDataAvailable As Boolean
