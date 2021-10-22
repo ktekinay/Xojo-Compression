@@ -176,7 +176,6 @@ Implements Readable, Writeable
 		  OutBuffer.DataSize = OutBufferData.Size
 		  OutBuffer.Pos = 0
 		  
-		  DataRemaining = 0
 		  IsEndOfFile = true
 		  
 		  WriteThreadID = kThreadIdNone
@@ -215,7 +214,7 @@ Implements Readable, Writeable
 		  
 		  var inBufferDataSize as integer = InBufferData.Size
 		  
-		  var dataRemaining as UInteger = self.DataRemaining
+		  var dataRemaining as UInteger
 		  var startingDataBufferBytes as integer = DataBufferBytes
 		  
 		  #if DebugBuild
@@ -285,7 +284,6 @@ Implements Readable, Writeable
 		  
 		  self.InBuffer = inBuffer
 		  self.OutBuffer = outBuffer
-		  self.DataRemaining = dataRemaining
 		  
 		  if DataBufferBytes <> startingDataBufferBytes then
 		    RaiseDataAvailable
@@ -343,10 +341,6 @@ Implements Readable, Writeable
 
 	#tag Property, Flags = &h1
 		Protected DataBufferBytes As Integer
-	#tag EndProperty
-
-	#tag Property, Flags = &h1
-		Protected DataRemaining As UInteger
 	#tag EndProperty
 
 	#tag Property, Flags = &h1

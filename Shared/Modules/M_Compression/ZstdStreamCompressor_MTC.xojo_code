@@ -3,22 +3,24 @@ Class ZstdStreamCompressor_MTC
 Inherits M_Compression.ZstdStreamBase
 	#tag Event
 		Sub DoFlush()
+		  var dataRemaining as UInteger
+		  
 		  do
-		    DataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.ContinueIt )
+		    dataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.ContinueIt )
 		    FlushBuffer OutBuffer
 		    
 		    if InBuffer.Pos >= InBuffer.DataSize then
 		      InBuffer.Pos = 0
 		      InBuffer.DataSize = 0
 		    end if
-		  loop until DataRemaining = 0
+		  loop until dataRemaining = 0
 		  
 		  do
-		    DataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.FlushIt )
+		    dataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.FlushIt )
 		    FlushBuffer OutBuffer
-		  loop until DataRemaining = 0
+		  loop until dataRemaining = 0
 		  
-		  DataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.EndIt )
+		  dataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.EndIt )
 		  FlushBuffer OutBuffer
 		  
 		End Sub

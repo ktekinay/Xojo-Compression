@@ -3,8 +3,10 @@ Class ZstdStreamDecompressor_MTC
 Inherits M_Compression.ZstdStreamBase
 	#tag Event
 		Sub DoFlush()
+		  var dataRemaining as UInteger
+		  
 		  do
-		    DataRemaining = DecompressStream( OutBuffer, InBuffer )
+		    dataRemaining = DecompressStream( OutBuffer, InBuffer )
 		    if OutBuffer.Pos >= OutBuffer.DataSize then
 		      FlushBuffer OutBuffer
 		    end if
@@ -13,7 +15,7 @@ Inherits M_Compression.ZstdStreamBase
 		      InBuffer.Pos = 0
 		      InBuffer.DataSize = 0
 		    end if
-		  loop until DataRemaining = 0
+		  loop until dataRemaining = 0
 		  
 		End Sub
 	#tag EndEvent
