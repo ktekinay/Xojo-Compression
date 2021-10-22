@@ -46,38 +46,12 @@ Inherits TestGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub DataAvailableEventTest()
-		  var compressor as new ZstdStreamCompressor_MTC( Zstd_MTC.LevelFast )
-		  var decompressor as new ZstdStreamDecompressor_MTC
+		Sub DataAvailableEventThroughThreadTest()
+		  StreamThread = new Thread
+		  AddHandler StreamThread.Run, WeakAddressOf StreamThread_Run
 		  
-		  var s as string = CompressionTestGroup.BigData
-		  var chunkSize as integer = compressor.RecommendedChunkSize
-		  
-		  AddHandler compressor.DataAvailable, WeakAddressOf Stream_DataAvailable
-		  for i as integer = 0 to s.Bytes - 1 step chunkSize
-		    compressor.Write s.MiddleBytes( i, chunkSize )
-		  next
-		  compressor.Flush
-		  RemoveHandler compressor.DataAvailable, WeakAddressOf Stream_DataAvailable
-		  
-		  var collected() as string
-		  if true then
-		    var empty() as string
-		    collected = CollectedStream
-		    CollectedStream = empty
-		  end if
-		  
-		  AddHandler decompressor.DataAvailable, WeakAddressOf Stream_DataAvailable
-		  for each block as string in collected
-		    decompressor.Write block
-		  next
-		  decompressor.Flush
-		  RemoveHandler decompressor.DataAvailable, WeakAddressOf Stream_DataAvailable
-		  
-		  var decompressed as string = String.FromArray( CollectedStream, "" )
-		  decompressed = decompressed.DefineEncoding( s.Encoding )
-		  
-		  Assert.AreSame s, decompressed
+		  StreamThread.Start
+		  AsyncAwait 5
 		  
 		End Sub
 	#tag EndMethod
@@ -143,6 +117,53 @@ Inherits TestGroup
 		  call ThreadCompressor.ReadAll
 		  
 		  Assert.Pass
+		  
+		  AsyncComplete
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub StreamThread_Run(sender As Thread)
+		  var compressor as new ZstdStreamCompressor_MTC( Zstd_MTC.LevelFast )
+		  var decompressor as new ZstdStreamDecompressor_MTC
+		  
+		  var s as string = CompressionTestGroup.BigData
+		  var chunkSize as integer = compressor.RecommendedChunkSize
+		  
+		  AddHandler compressor.DataAvailable, WeakAddressOf Stream_DataAvailable
+		  for i as integer = 0 to s.Bytes - 1 step chunkSize
+		    compressor.Write s.MiddleBytes( i, chunkSize )
+		  next
+		  compressor.Flush
+		  
+		  while not compressor.EndOfFile
+		    sender.Sleep 10
+		  wend
+		  RemoveHandler compressor.DataAvailable, WeakAddressOf Stream_DataAvailable
+		  
+		  var collected() as string
+		  if true then
+		    var empty() as string
+		    collected = CollectedStream
+		    CollectedStream = empty
+		  end if
+		  
+		  AddHandler decompressor.DataAvailable, WeakAddressOf Stream_DataAvailable
+		  for each block as string in collected
+		    decompressor.Write block
+		  next
+		  decompressor.Flush
+		  
+		  while not decompressor.EndOfFile
+		    sender.Sleep 10
+		  wend
+		  RemoveHandler decompressor.DataAvailable, WeakAddressOf Stream_DataAvailable
+		  
+		  var decompressed as string = String.FromArray( CollectedStream, "" )
+		  decompressed = decompressed.DefineEncoding( s.Encoding )
+		  
+		  Assert.AreSame s, decompressed
 		  
 		  AsyncComplete
 		  
@@ -325,6 +346,10 @@ Inherits TestGroup
 
 	#tag Property, Flags = &h21
 		Private CollectedStream() As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private StreamThread As Thread
 	#tag EndProperty
 
 	#tag Property, Flags = &h21

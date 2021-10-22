@@ -58,7 +58,7 @@ Implements Readable, Writeable
 		Function EndOfFile() As Boolean
 		  // Part of the Readable interface.
 		  
-		  return IsEndOfFile
+		  return HasBeenReset and DataBufferBytes = 0
 		  
 		End Function
 	#tag EndMethod
@@ -207,17 +207,21 @@ Implements Readable, Writeable
 		  OutBuffer.VirtualSize = OutBufferData.Size
 		  OutBuffer.Pos = 0
 		  
-		  IsEndOfFile = true
+		  HasBeenReset = true
 		  
 		  WriteThreadID = kThreadIdNone
 		  
 		  if DataAvailableTimer is nil then
 		    DataAvailableTimer = new Timer
 		    DataAvailableTimer.Period = 1
+		    DataAvailableTimer.RunMode = Timer.RunModes.Off
+		    
 		    AddHandler DataAvailableTimer.Action, WeakAddressOf RaiseDataAvailable
 		  end if
 		  
-		  DataAvailableTimer.RunMode = Timer.RunModes.Off
+		  //
+		  // If the DataAvailableTimer is set to fire, we will let it do that
+		  //
 		  
 		End Sub
 	#tag EndMethod
@@ -242,7 +246,7 @@ Implements Readable, Writeable
 		    return
 		  end if
 		  
-		  IsEndOfFile = false
+		  HasBeenReset = false
 		  
 		  //
 		  // We have to split the src into chunks
@@ -394,6 +398,10 @@ Implements Readable, Writeable
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
+		Protected HasBeenReset As Boolean = True
+	#tag EndProperty
+
+	#tag Property, Flags = &h1
 		Protected InBuffer As ZstdBuffer
 	#tag EndProperty
 
@@ -409,10 +417,6 @@ Implements Readable, Writeable
 		#tag EndGetter
 		IsDataAvailable As Boolean
 	#tag EndComputedProperty
-
-	#tag Property, Flags = &h1
-		Protected IsEndOfFile As Boolean = True
-	#tag EndProperty
 
 	#tag Property, Flags = &h1
 		Protected OutBuffer As ZstdBuffer
