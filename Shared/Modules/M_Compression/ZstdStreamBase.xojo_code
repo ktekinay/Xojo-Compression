@@ -209,10 +209,17 @@ Implements Readable, Writeable
 		  // We have to split the src into chunks
 		  // and consume it all
 		  //
-		  var inBuffer as ZstdBuffer = self.InBuffer
-		  var outBuffer as ZstdBuffer = self.OutBuffer
+		  #if DebugBuild then
+		    //
+		    // Easier to debug
+		    //
+		    var inBuffer as ZstdBuffer = self.InBuffer
+		    var outBuffer as ZstdBuffer = self.OutBuffer
+		    var inBufferData as MemoryBlock = self.InBufferData
+		    var outBufferData as MemoryBlock = self.OutBufferData
+		  #endif
 		  
-		  var inBufferDataSize as integer = InBufferData.Size
+		  var inBufferDataSize as integer = inBufferData.Size
 		  
 		  var dataRemaining as UInteger
 		  var startingDataBufferBytes as integer = DataBufferBytes
@@ -221,6 +228,9 @@ Implements Readable, Writeable
 		    var loopCount as integer // For debugging
 		  #endif
 		  
+		  var srcIndex as integer = 0
+		  var srcBytes as integer = src.Bytes
+		  
 		  do
 		    #if DebugBuild
 		      if loopCount = 0 then
@@ -228,27 +238,24 @@ Implements Readable, Writeable
 		      end if
 		    #endif
 		    
-		    var chunk as string
 		    var inBufferUnusedBytes as integer = inBufferDataSize - inBuffer.DataSize
+		    var remainingSrcBytes as integer = srcBytes - srcIndex
 		    
-		    if src = "" or inBufferUnusedBytes = 0 then
+		    if srcIndex = srcBytes or inBufferUnusedBytes = 0 then
 		      //
 		      // Do nothing
 		      //
 		      
-		    elseif src.Bytes <= inBufferUnusedBytes then
-		      chunk = src
-		      src = ""
+		    elseif remainingSrcBytes <= inBufferUnusedBytes then
+		      inBufferData.StringValue( inBuffer.DataSize, remainingSrcBytes ) = src.MiddleBytes( srcIndex, remainingSrcBytes )
+		      inBuffer.DataSize = inBuffer.DataSize + remainingSrcBytes
+		      srcIndex = srcBytes
 		      
 		    else
-		      chunk = src.MiddleBytes( 0, inBufferUnusedBytes )
-		      src = src.MiddleBytes( inBufferUnusedBytes )
+		      inBufferData.StringValue( inBuffer.DataSize, inBufferUnusedBytes ) = src.MiddleBytes( srcIndex, inBufferUnusedBytes )
+		      inBuffer.DataSize = inBuffer.DataSize + inBufferUnusedBytes
+		      srcIndex = srcIndex + inBufferUnusedBytes
 		      
-		    end if
-		    
-		    if chunk <> "" then
-		      InBufferData.StringValue( inBuffer.DataSize, chunk.Bytes ) = chunk
-		      inBuffer.DataSize = inBuffer.DataSize + chunk.Bytes
 		    end if
 		    
 		    if inBuffer.DataSize < inBufferDataSize then
@@ -279,8 +286,10 @@ Implements Readable, Writeable
 		    #endif
 		  loop
 		  
-		  self.InBuffer = inBuffer
-		  self.OutBuffer = outBuffer
+		  #if DebugBuild
+		    self.InBuffer = inBuffer
+		    self.OutBuffer = outBuffer
+		  #endif
 		  
 		  if DataBufferBytes <> startingDataBufferBytes then
 		    RaiseDataAvailable
