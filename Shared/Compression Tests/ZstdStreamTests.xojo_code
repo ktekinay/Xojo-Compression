@@ -46,6 +46,30 @@ Inherits TestGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub ReuseTest()
+		  var compressor as new ZstdStreamCompressor_MTC( Zstd_MTC.LevelFast )
+		  var decompressor as new ZstdStreamDecompressor_MTC
+		  
+		  var s as string = CompressionTestGroup.BigData
+		  
+		  compressor.Write s
+		  call compressor.Flush
+		  decompressor.Write compressor.ReadAll
+		  decompressor.Flush
+		  var decompressed as string = decompressor.ReadAll( Encodings.UTF8 )
+		  Assert.AreSame s, decompressed, "Mismatch 1"
+		  
+		  s = "abcdegefghijklmnop12345 abcdegefghijklmnop12345 abcdegefghijklmnop12345 abcdegefghijklmnop12345"
+		  compressor.Write s
+		  compressor.Flush
+		  decompressor.Write compressor.ReadAll
+		  decompressor.Flush
+		  decompressed = decompressor.ReadAll( Encodings.UTF8 )
+		  Assert.AreSame s, decompressed, "Mismatch 2"
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub SequentialThreadTest()
 		  AsyncAwait 5
 		  
