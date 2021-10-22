@@ -35,7 +35,7 @@ Inherits TestGroup
 		  try
 		    ThreadCompressor.Write "abc"
 		    Assert.Fail "No exception"
-		  catch err as RuntimeException
+		  catch err as CompressionException_MTC
 		    Assert.Pass 
 		  end try
 		  #pragma BreakOnExceptions default
@@ -204,7 +204,7 @@ Inherits TestGroup
 		    LogTestTimer "decompress native"
 		    Assert.Pass "Decompressed"
 		    
-		  catch err as RuntimeException
+		  catch err as CompressionException_MTC
 		    if err isa EndException or err isa ThreadEndException then
 		      raise err
 		    end if
@@ -231,7 +231,7 @@ Inherits TestGroup
 		    LogTestTimer "decompress cli"
 		    Assert.Pass "Decompressed compressedByCLI"
 		    
-		  catch err as RuntimeException
+		  catch err as CompressionException_MTC
 		    if err isa EndException or err isa ThreadEndException then
 		      raise err
 		    end if
@@ -277,7 +277,7 @@ Inherits TestGroup
 		    LogTestTimer "decompress native"
 		    Assert.Pass "Decompressed"
 		    
-		  catch err as RuntimeException
+		  catch err as CompressionException_MTC
 		    if err isa EndException or err isa ThreadEndException then
 		      raise err
 		    end if
@@ -317,7 +317,7 @@ Inherits TestGroup
 		    LogTestTimer "decompress cli"
 		    Assert.Pass "Decompressed compressedByCLI"
 		    
-		  catch err as RuntimeException
+		  catch err as CompressionException_MTC
 		    if err isa EndException or err isa ThreadEndException then
 		      raise err
 		    end if

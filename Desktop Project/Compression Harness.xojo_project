@@ -40,6 +40,7 @@ Class=ZstdStream;../Shared/Modules/M_Compression/ZstdStream.xojo_code;&h00000000
 Class=ZstdBase;../Shared/Modules/M_Compression/ZstdBase.xojo_code;&h0000000018EBBFFF;&h0000000037E7B7FF;false
 Class=ZstdStreamCompressor_MTC;../Shared/Modules/M_Compression/ZstdStreamCompressor_MTC.xojo_code;&h00000000574507FF;&h0000000037E7B7FF;false
 Class=ZstdStreamDecompressor_MTC;../Shared/Modules/M_Compression/ZstdStreamDecompressor_MTC.xojo_code;&h000000000057A7FF;&h0000000037E7B7FF;false
+Class=CompressionException_MTC;../Shared/Modules/M_Compression/CompressionException_MTC.xojo_code;&h000000002035FFFF;&h0000000037E7B7FF;false
 DefaultWindow=XojoUnitTestWindow
 AppMenuBar=XojoUnitMenuBar
 MajorVersion=1

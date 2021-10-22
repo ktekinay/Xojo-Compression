@@ -2,7 +2,7 @@
 Protected Module M_Compression
 	#tag Method, Flags = &h21
 		Private Sub RaiseException(msg As String)
-		  var err as new RuntimeException
+		  var err as new CompressionException_MTC
 		  err.Message = msg
 		  raise err
 		  

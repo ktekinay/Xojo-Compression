@@ -42,7 +42,7 @@ Inherits CompressionTestGroup
 		  try
 		    call Compressor.Decompress( s )
 		    Assert.Fail "Did not raise an exception"
-		  catch err as RuntimeException
+		  catch err as CompressionException_MTC
 		    Assert.Pass
 		  end try
 		  #pragma BreakOnExceptions default
