@@ -48,8 +48,13 @@ Inherits M_Compression.ZstdStreamBase
 		  var outBufferSize as UInteger = ZSTD_CStreamOutSize
 		  ZstdMaybeRaiseException outBufferSize
 		  
-		  InBufferData = new MemoryBlock( inBufferSize )
-		  OutBufferData = new MemoryBlock( outBufferSize )
+		  if InBufferData is nil or InBufferData.Size <> inBufferSize then
+		    InBufferData = new MemoryBlock( inBufferSize )
+		  end if
+		  
+		  if OutBufferData is nil or OutBufferData.Size <> outBufferSize then
+		    OutBufferData = new MemoryBlock( outBufferSize )
+		  end if
 		  
 		End Sub
 	#tag EndEvent
