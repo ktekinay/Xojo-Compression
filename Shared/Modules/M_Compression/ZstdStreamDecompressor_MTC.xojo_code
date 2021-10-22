@@ -7,13 +7,13 @@ Inherits M_Compression.ZstdStreamBase
 		  
 		  do
 		    dataRemaining = DecompressStream( OutBuffer, InBuffer )
-		    if OutBuffer.Pos >= OutBuffer.DataSize then
+		    if OutBuffer.Pos >= OutBuffer.VirtualSize then
 		      FlushBuffer OutBuffer
 		    end if
 		    
-		    if InBuffer.Pos >= InBuffer.DataSize then
+		    if InBuffer.Pos >= InBuffer.VirtualSize then
 		      InBuffer.Pos = 0
-		      InBuffer.DataSize = 0
+		      InBuffer.VirtualSize = 0
 		    end if
 		  loop until dataRemaining = 0
 		  

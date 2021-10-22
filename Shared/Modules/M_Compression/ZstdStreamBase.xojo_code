@@ -169,11 +169,11 @@ Implements Readable, Writeable
 		  RaiseEvent DoReset
 		  
 		  InBuffer.Data = InBufferData
-		  InBuffer.DataSize = 0
+		  InBuffer.VirtualSize = 0
 		  InBuffer.Pos = 0
 		  
 		  OutBuffer.Data = OutBufferData
-		  OutBuffer.DataSize = OutBufferData.Size
+		  OutBuffer.VirtualSize = OutBufferData.Size
 		  OutBuffer.Pos = 0
 		  
 		  IsEndOfFile = true
@@ -217,6 +217,7 @@ Implements Readable, Writeable
 		    var outBuffer as ZstdBuffer = self.OutBuffer
 		    var inBufferData as MemoryBlock = self.InBufferData
 		    var outBufferData as MemoryBlock = self.OutBufferData
+		    #pragma unused outBufferData
 		  #endif
 		  
 		  var inBufferDataSize as integer = inBufferData.Size
@@ -238,7 +239,7 @@ Implements Readable, Writeable
 		      end if
 		    #endif
 		    
-		    var inBufferUnusedBytes as integer = inBufferDataSize - inBuffer.DataSize
+		    var inBufferUnusedBytes as integer = inBufferDataSize - inBuffer.VirtualSize
 		    var remainingSrcBytes as integer = srcBytes - srcIndex
 		    
 		    if srcIndex = srcBytes or inBufferUnusedBytes = 0 then
@@ -247,18 +248,18 @@ Implements Readable, Writeable
 		      //
 		      
 		    elseif remainingSrcBytes <= inBufferUnusedBytes then
-		      inBufferData.StringValue( inBuffer.DataSize, remainingSrcBytes ) = src.MiddleBytes( srcIndex, remainingSrcBytes )
-		      inBuffer.DataSize = inBuffer.DataSize + remainingSrcBytes
+		      inBufferData.StringValue( inBuffer.VirtualSize, remainingSrcBytes ) = src.MiddleBytes( srcIndex, remainingSrcBytes )
+		      inBuffer.VirtualSize = inBuffer.VirtualSize + remainingSrcBytes
 		      srcIndex = srcBytes
 		      
 		    else
-		      inBufferData.StringValue( inBuffer.DataSize, inBufferUnusedBytes ) = src.MiddleBytes( srcIndex, inBufferUnusedBytes )
-		      inBuffer.DataSize = inBuffer.DataSize + inBufferUnusedBytes
+		      inBufferData.StringValue( inBuffer.VirtualSize, inBufferUnusedBytes ) = src.MiddleBytes( srcIndex, inBufferUnusedBytes )
+		      inBuffer.VirtualSize = inBuffer.VirtualSize + inBufferUnusedBytes
 		      srcIndex = srcIndex + inBufferUnusedBytes
 		      
 		    end if
 		    
-		    if inBuffer.DataSize < inBufferDataSize then
+		    if inBuffer.VirtualSize < inBufferDataSize then
 		      //
 		      // We will take care of this on the next pass
 		      //
@@ -267,12 +268,12 @@ Implements Readable, Writeable
 		    
 		    RaiseEvent DoWrite( outBuffer, inBuffer, dataRemaining )
 		    
-		    if inBuffer.Pos = inBuffer.DataSize then
+		    if inBuffer.Pos = inBuffer.VirtualSize then
 		      inBuffer.Pos = 0
-		      inBuffer.DataSize = 0
+		      inBuffer.VirtualSize = 0
 		    end if
 		    
-		    if outBuffer.Pos = outBuffer.DataSize then
+		    if outBuffer.Pos = outBuffer.VirtualSize then
 		      FlushBuffer outBuffer
 		    elseif src = "" and inBuffer.Pos = 0 then
 		      //
@@ -393,7 +394,7 @@ Implements Readable, Writeable
 
 	#tag Structure, Name = ZstdBuffer, Flags = &h1
 		Data As Ptr
-		  DataSize As UInteger
+		  VirtualSize As UInteger
 		Pos As UInteger
 	#tag EndStructure
 

@@ -9,9 +9,9 @@ Inherits M_Compression.ZstdStreamBase
 		    dataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.ContinueIt )
 		    FlushBuffer OutBuffer
 		    
-		    if InBuffer.Pos >= InBuffer.DataSize then
+		    if InBuffer.Pos >= InBuffer.VirtualSize then
 		      InBuffer.Pos = 0
-		      InBuffer.DataSize = 0
+		      InBuffer.VirtualSize = 0
 		    end if
 		  loop until dataRemaining = 0
 		  
