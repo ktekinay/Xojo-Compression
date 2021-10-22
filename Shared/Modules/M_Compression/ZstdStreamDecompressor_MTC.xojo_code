@@ -5,13 +5,15 @@ Inherits M_Compression.ZstdStreamBase
 		Sub DoFlush()
 		  do
 		    DataRemaining = DecompressStream( OutBuffer, InBuffer )
-		    FlushBuffer OutBuffer
+		    if OutBuffer.Pos >= OutBuffer.DataSize then
+		      FlushBuffer OutBuffer
+		    end if
 		    
 		    if InBuffer.Pos >= InBuffer.DataSize then
 		      InBuffer.Pos = 0
 		      InBuffer.DataSize = 0
 		    end if
-		  loop until OutBuffer.Pos < OutBuffer.DataSize
+		  loop until DataRemaining = 0
 		  
 		End Sub
 	#tag EndEvent
@@ -45,10 +47,10 @@ Inherits M_Compression.ZstdStreamBase
 	#tag EndEvent
 
 	#tag Event
-		Function DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer) As UInteger
-		  return DecompressStream( outBuffer, inBuffer )
+		Sub DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer, ByRef dataRemaining As UInteger)
+		  dataRemaining = DecompressStream( outBuffer, inBuffer )
 		  
-		End Function
+		End Sub
 	#tag EndEvent
 
 

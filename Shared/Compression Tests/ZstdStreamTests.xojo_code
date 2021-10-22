@@ -102,24 +102,24 @@ Inherits TestGroup
 		  
 		  var s as string = CompressionTestGroup.BigData
 		  
-		  StartTestTimer "encrypting"
+		  StartTestTimer "compressing"
 		  for pos as integer = 0 to s.Bytes - 1 step compressor.RecommendedChunkSize
 		    compressor.Write s.MiddleBytes( pos, compressor.RecommendedChunkSize )
 		  next
 		  compressor.Flush
 		  
-		  var encrypted as string = compressor.ReadAll
-		  LogTestTimer "encrypting"
+		  var compressed as string = compressor.ReadAll
+		  LogTestTimer "compressing"
 		  
 		  var decompressor as new ZstdStreamDecompressor_MTC
 		  
 		  try
-		    StartTestTimer "decrypt native"
-		    for pos as integer = 0 to encrypted.Bytes step decompressor.RecommendedChunkSize
-		      decompressor.Write encrypted.MiddleBytes( pos, decompressor.RecommendedChunkSize )
+		    StartTestTimer "decompress native"
+		    for pos as integer = 0 to compressed.Bytes step decompressor.RecommendedChunkSize
+		      decompressor.Write compressed.MiddleBytes( pos, decompressor.RecommendedChunkSize )
 		    next
 		    decompressor.Flush
-		    LogTestTimer "decrypt native"
+		    LogTestTimer "decompress native"
 		    Assert.Pass "Decompressed"
 		    
 		  catch err as RuntimeException
@@ -130,10 +130,10 @@ Inherits TestGroup
 		    
 		  end try
 		  
-		  var decrypted as string = decompressor.ReadAll( Encodings.UTF8 )
-		  Assert.AreEqual s.Bytes, decrypted.Bytes, "Decrypted byte count doesn't match"
-		  if StrComp( decrypted, s, 0 ) <> 0 then
-		    Assert.Fail "Decrypted bytes don't match"
+		  var decompressed as string = decompressor.ReadAll( Encodings.UTF8 )
+		  Assert.AreEqual s.Bytes, decompressed.Bytes, "decompressed byte count doesn't match"
+		  if StrComp( decompressed, s, 0 ) <> 0 then
+		    Assert.Fail "decompressed bytes don't match"
 		  else
 		    Assert.Pass
 		  end if
@@ -141,12 +141,12 @@ Inherits TestGroup
 		  decompressor = new ZstdStreamDecompressor_MTC
 		  
 		  try
-		    StartTestTimer "decrypt cli"
+		    StartTestTimer "decompress cli"
 		    for pos as integer = 0 to compressedByCLI.Bytes step decompressor.RecommendedChunkSize
 		      decompressor.Write compressedByCLI.MiddleBytes( pos, decompressor.RecommendedChunkSize )
 		    next
 		    decompressor.Flush
-		    LogTestTimer "decrypt cli"
+		    LogTestTimer "decompress cli"
 		    Assert.Pass "Decompressed compressedByCLI"
 		    
 		  catch err as RuntimeException
@@ -162,8 +162,6 @@ Inherits TestGroup
 
 	#tag Method, Flags = &h0
 		Sub StreamWithUnevenBlocksTest()
-		  const kChunkSize as integer = 1232329
-		  
 		  var compressedByCLI as string
 		  
 		  if true then
@@ -173,27 +171,28 @@ Inherits TestGroup
 		  end if
 		  
 		  var compressor as new ZstdStreamCompressor_MTC( Zstd_MTC.LevelFast )
+		  var chunkSize as integer = compressor.RecommendedChunkSize + 1
 		  
 		  var s as string = CompressionTestGroup.BigData
 		  
-		  StartTestTimer "encrypting"
-		  for pos as integer = 0 to s.Bytes - 1 step kChunkSize
-		    compressor.Write s.MiddleBytes( pos, kChunkSize )
+		  StartTestTimer "compressing"
+		  for pos as integer = 0 to s.Bytes - 1 step chunkSize
+		    compressor.Write s.MiddleBytes( pos, chunkSize )
 		  next
 		  compressor.Flush
 		  
-		  var encrypted as string = compressor.ReadAll
-		  LogTestTimer "encrypting"
+		  var compressed as string = compressor.ReadAll
+		  LogTestTimer "compressing"
 		  
 		  var decompressor as new ZstdStreamDecompressor_MTC
-		  
+		  chunkSize = decompressor.RecommendedChunkSize + 1
 		  try
-		    StartTestTimer "decrypt native"
-		    for pos as integer = 0 to encrypted.Bytes step kChunkSize
-		      decompressor.Write encrypted.MiddleBytes( pos, kChunkSize )
+		    StartTestTimer "decompress native"
+		    for pos as integer = 0 to compressed.Bytes step chunkSize
+		      decompressor.Write compressed.MiddleBytes( pos, chunkSize )
 		    next
 		    decompressor.Flush
-		    LogTestTimer "decrypt native"
+		    LogTestTimer "decompress native"
 		    Assert.Pass "Decompressed"
 		    
 		  catch err as RuntimeException
@@ -204,10 +203,23 @@ Inherits TestGroup
 		    
 		  end try
 		  
-		  var decrypted as string = decompressor.ReadAll( Encodings.UTF8 )
-		  Assert.AreEqual s.Bytes, decrypted.Bytes, "Decrypted byte count doesn't match"
-		  if StrComp( decrypted, s, 0 ) <> 0 then
-		    Assert.Fail "Decrypted bytes don't match"
+		  var decompressed as string = decompressor.ReadAll( Encodings.UTF8 )
+		  Assert.AreEqual s.Bytes, decompressed.Bytes, "decompressed byte count doesn't match"
+		  if StrComp( decompressed, s, 0 ) <> 0 then
+		    Assert.Fail "decompressed bytes don't match"
+		    var m1 as MemoryBlock = s
+		    var m2 as MemoryBlock = decompressed
+		    
+		    var p1 as ptr = m1
+		    var p2 as ptr = m2
+		    
+		    var lastByte as integer = max( m1.Size, m2.Size ) - 1
+		    for b as integer = 0 to lastByte
+		      if b >= m1.Size or b >= m2.Size or p1.Byte( b ) <> p2.Byte( b ) then
+		        Assert.Message "Mismatch at byte " + b.ToString
+		        exit
+		      end if
+		    next
 		  else
 		    Assert.Pass
 		  end if
@@ -215,12 +227,12 @@ Inherits TestGroup
 		  decompressor = new ZstdStreamDecompressor_MTC
 		  
 		  try
-		    StartTestTimer "decrypt cli"
-		    for pos as integer = 0 to compressedByCLI.Bytes step kChunkSize
-		      decompressor.Write compressedByCLI.MiddleBytes( pos, kChunkSize )
+		    StartTestTimer "decompress cli"
+		    for pos as integer = 0 to compressedByCLI.Bytes step chunkSize
+		      decompressor.Write compressedByCLI.MiddleBytes( pos, chunkSize )
 		    next
 		    decompressor.Flush
-		    LogTestTimer "decrypt cli"
+		    LogTestTimer "decompress cli"
 		    Assert.Pass "Decompressed compressedByCLI"
 		    
 		  catch err as RuntimeException
@@ -230,6 +242,14 @@ Inherits TestGroup
 		    Assert.Fail err.Message
 		    
 		  end try
+		  
+		  decompressed = decompressor.ReadAll( Encodings.UTF8 )
+		  Assert.AreEqual s.Bytes, decompressed.Bytes, "decompressed cli byte count doesn't match"
+		  if StrComp( decompressed, s, 0 ) <> 0 then
+		    Assert.Fail "decompressed cli bytes don't match"
+		  else
+		    Assert.Pass
+		  end if
 		  
 		End Sub
 	#tag EndMethod

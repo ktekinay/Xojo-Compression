@@ -53,10 +53,10 @@ Inherits M_Compression.ZstdStreamBase
 	#tag EndEvent
 
 	#tag Event
-		Function DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer) As UInteger
-		  return CompressStream2( outBuffer, inBuffer, Directives.ContinueIt )
+		Sub DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer, ByRef dataRemaining As UInteger)
+		  dataRemaining = CompressStream2( outBuffer, inBuffer, Directives.ContinueIt )
 		  
-		End Function
+		End Sub
 	#tag EndEvent
 
 

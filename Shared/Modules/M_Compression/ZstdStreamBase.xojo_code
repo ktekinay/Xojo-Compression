@@ -71,6 +71,7 @@ Implements Readable, Writeable
 		  
 		  FlushBuffer OutBuffer
 		  RaiseEvent DoFlush
+		  FlushBuffer OutBuffer
 		  
 		  if DataBufferBytes <> startingDataBufferBytes then
 		    RaiseDataAvailable
@@ -175,6 +176,7 @@ Implements Readable, Writeable
 		  OutBuffer.DataSize = OutBufferData.Size
 		  OutBuffer.Pos = 0
 		  
+		  DataRemaining = 0
 		  IsEndOfFile = true
 		  
 		  WriteThreadID = kThreadIdNone
@@ -229,44 +231,51 @@ Implements Readable, Writeable
 		      end if
 		    #endif
 		    
-		    if outBuffer.Pos = outBuffer.DataSize then
-		      FlushBuffer outBuffer
-		    elseif outBuffer.Pos = prevOutBufferPos and src = "" then
-		      exit
-		    end if
-		    
 		    var chunk as string
+		    var inBufferUnusedBytes as integer = inBufferDataSize - inBuffer.DataSize
 		    
-		    if src = "" or inBuffer.Pos <> 0 then
+		    if src = "" or inBufferUnusedBytes = 0 then
 		      //
 		      // Do nothing
 		      //
 		      
-		    elseif dataRemaining <> 0 then
-		      chunk = src.MiddleBytes( 0, dataRemaining )
-		      src = src.MiddleBytes( dataRemaining )
-		      
-		    elseif src.Bytes <= inBufferDataSize then
+		    elseif src.Bytes <= inBufferUnusedBytes then
 		      chunk = src
 		      src = ""
 		      
 		    else
-		      chunk = src.MiddleBytes( 0, inBufferDataSize )
-		      src = src.MiddleBytes( inBufferDataSize )
+		      chunk = src.MiddleBytes( 0, inBufferUnusedBytes )
+		      src = src.MiddleBytes( inBufferUnusedBytes )
 		      
 		    end if
 		    
 		    if chunk <> "" then
-		      InBufferData.StringValue( 0, chunk.Bytes ) = chunk
-		      inBuffer.DataSize = chunk.Bytes
+		      InBufferData.StringValue( inBuffer.DataSize, chunk.Bytes ) = chunk
+		      inBuffer.DataSize = inBuffer.DataSize + chunk.Bytes
+		    end if
+		    
+		    if inBuffer.DataSize < inBufferDataSize then
+		      //
+		      // We will take care of this on the next pass
+		      //
+		      exit
 		    end if
 		    
 		    prevOutBufferPos = outBuffer.Pos
-		    dataRemaining = RaiseEvent DoWrite( outBuffer, inBuffer )
+		    RaiseEvent DoWrite( outBuffer, inBuffer, dataRemaining )
 		    
 		    if inBuffer.Pos = inBuffer.DataSize then
 		      inBuffer.Pos = 0
 		      inBuffer.DataSize = 0
+		    end if
+		    
+		    if outBuffer.Pos = outBuffer.DataSize then
+		      FlushBuffer outBuffer
+		    elseif src = "" and inBuffer.Pos = 0 then
+		      //
+		      // Nothing more to consume
+		      //
+		      exit
 		    end if
 		    
 		    #if DebugBuild
@@ -308,7 +317,7 @@ Implements Readable, Writeable
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer) As UInteger
+		Event DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer, ByRef dataRemaining As UInteger)
 	#tag EndHook
 
 
