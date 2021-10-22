@@ -123,6 +123,27 @@ Inherits TestGroup
 		End Sub
 	#tag EndMethod
 
+	#tag Method, Flags = &h0
+		Sub SmallDataTest()
+		  var s as string = "abcabc 123123 "
+		  s = s + s + s + s
+		  
+		  Assert.Message "s.Bytes = " + s.Bytes.ToString
+		  
+		  var compressor as new ZstdStreamCompressor_MTC
+		  compressor.Write s
+		  compressor.Flush
+		  
+		  var decompressor as new ZstdStreamDecompressor_MTC
+		  decompressor.Write compressor.ReadAll
+		  decompressor.Flush
+		  
+		  var decompressed as string = decompressor.ReadAll( s.Encoding )
+		  Assert.AreSame s, decompressed
+		  
+		End Sub
+	#tag EndMethod
+
 	#tag Method, Flags = &h21
 		Private Sub StreamThread_Run(sender As Thread)
 		  var compressor as new ZstdStreamCompressor_MTC( Zstd_MTC.LevelFast )
