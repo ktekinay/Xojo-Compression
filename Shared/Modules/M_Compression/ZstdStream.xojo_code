@@ -1,7 +1,7 @@
 #tag Class
 Protected Class ZstdStream
 Inherits ZstdBase
-Implements Readable, Writeable
+Implements Readable,Writeable
 	#tag Method, Flags = &h1
 		Protected Sub AddToDataBuffer(s As String)
 		  if s <> "" then
@@ -76,6 +76,10 @@ Implements Readable, Writeable
 		Sub Flush()
 		  // Part of the Writeable interface.
 		  
+		  if HasBeenReset then
+		    return
+		  end if
+		  
 		  ConfirmWriteThreadId
 		  
 		  var startingDataBufferBytes as integer = DataBufferBytes
@@ -113,9 +117,6 @@ Implements Readable, Writeable
 		    
 		  else
 		    var buffer as string = String.FromArray( DataBuffer, "" )
-		    DataBuffer.ResizeTo 0
-		    DataBuffer( 0 ) = buffer
-		    
 		    return buffer
 		    
 		  end if
@@ -195,6 +196,49 @@ Implements Readable, Writeable
 		End Function
 	#tag EndMethod
 
+	#tag Method, Flags = &h0, Description = 52657475726E20616E6420636C656172206E65787420636F6D706C657465206672616D652E
+		Function ReadFrame(encoding As TextEncoding = Nil) As String
+		  var frame as string
+		  
+		  if DataBufferBytes <> 0 then
+		    
+		    var frameIndex as integer = DataBuffer.IndexOf( "" )
+		    
+		    if frameIndex <> -1 then
+		      //
+		      // Get the frame
+		      var stringBuilder() as string
+		      for i as integer = 0 to frameIndex
+		        stringBuilder.Add DataBuffer( i )
+		      next
+		      
+		      frame = String.FromArray( stringBuilder, "" )
+		      
+		      //
+		      // Now move everything up and resize DataBuffer
+		      //
+		      var moveTo as integer = -1
+		      var startRow as integer = frameIndex + 1
+		      
+		      for moveFrom as integer = startRow to DataBuffer.LastRowIndex
+		        moveTo = moveTo + 1
+		        DataBuffer( moveTo ) = DataBuffer( moveFrom )
+		      next
+		      DataBuffer.ResizeTo moveTo
+		      DataBufferBytes = DataBufferBytes - frame.Bytes
+		      
+		      if encoding isa object then
+		        frame = frame.DefineEncoding( encoding )
+		      end if
+		    end if
+		    
+		  end if
+		  
+		  return frame
+		  
+		End Function
+	#tag EndMethod
+
 	#tag Method, Flags = &h1
 		Protected Sub Reset()
 		  RaiseEvent DoReset
@@ -246,6 +290,7 @@ Implements Readable, Writeable
 		    return
 		  end if
 		  
+		  IsFrameComplete = false // Assume this
 		  HasBeenReset = false
 		  
 		  //
@@ -302,23 +347,47 @@ Implements Readable, Writeable
 		      
 		    end if
 		    
-		    if inBuffer.VirtualSize < inBufferDataSize then
+		    if inBuffer.VirtualSize < inBufferDataSize and not IsAlwaysWrite then
 		      //
 		      // We will take care of this on the next pass
 		      //
 		      exit
 		    end if
 		    
-		    RaiseEvent DoWrite( outBuffer, inBuffer, dataRemaining )
+		    IsFrameComplete = RaiseEvent DoWrite( outBuffer, inBuffer, dataRemaining )
+		    
+		    #if DebugBuild
+		      if dataRemaining = 0 then
+		        dataRemaining = dataRemaining // A place to break
+		      end if
+		    #endif
 		    
 		    if inBuffer.Pos = inBuffer.VirtualSize then
 		      inBuffer.Pos = 0
 		      inBuffer.VirtualSize = 0
 		    end if
 		    
+		    if IsFrameComplete then
+		      //
+		      // This can only happen during decompression so we have to tell
+		      // the user that the frame is available
+		      //
+		      FlushBuffer outBuffer
+		      DataBuffer.Add "" // Frame marker
+		      RaiseDataAvailable
+		      startingDataBufferBytes = DataBufferBytes // In case there is more later
+		    end if
+		    
+		    #if DebugBuild
+		      if not IsFrameComplete then
+		        IsFrameComplete = IsFrameComplete // A place to break
+		      end if
+		    #endif
+		    
 		    if outBuffer.Pos = outBuffer.VirtualSize then
 		      FlushBuffer outBuffer
-		    elseif src = "" and inBuffer.Pos = 0 then
+		      
+		    elseif srcIndex >= srcBytes and inBuffer.Pos = 0 then
 		      //
 		      // Nothing more to consume
 		      //
@@ -329,6 +398,8 @@ Implements Readable, Writeable
 		      loopCount = loopCount + 1
 		    #endif
 		  loop
+		  
+		  FlushBuffer outBuffer
 		  
 		  #if DebugBuild
 		    self.InBuffer = inBuffer
@@ -364,8 +435,8 @@ Implements Readable, Writeable
 		Event DoReset()
 	#tag EndHook
 
-	#tag Hook, Flags = &h0
-		Event DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer, ByRef dataRemaining As UInteger)
+	#tag Hook, Flags = &h0, Description = 506572666F726D207468652057726974652C2072657475726E206461746152656D61696E696E6720696E2074686520706172616D6574657220616E64207768657468657220746865206672616D6520697320636F6D706C65746520696E2074686520726573756C742E
+		Event DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer, ByRef dataRemaining As UInteger) As Boolean
 	#tag EndHook
 
 
@@ -409,6 +480,10 @@ Implements Readable, Writeable
 		Protected InBufferData As MemoryBlock
 	#tag EndProperty
 
+	#tag Property, Flags = &h1
+		Protected IsAlwaysWrite As Boolean
+	#tag EndProperty
+
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
@@ -417,6 +492,20 @@ Implements Readable, Writeable
 		#tag EndGetter
 		IsDataAvailable As Boolean
 	#tag EndComputedProperty
+
+	#tag ComputedProperty, Flags = &h0, Description = 4F6E65206F7265206D6F7265206672616D65732061726520617661696C61626C65207468726F75676820526561644672616D652E
+		#tag Getter
+			Get
+			  return DataBuffer.IndexOf( "" ) <> -1
+			  
+			End Get
+		#tag EndGetter
+		IsFrameAvailable As Boolean
+	#tag EndComputedProperty
+
+	#tag Property, Flags = &h1
+		Protected IsFrameComplete As Boolean = True
+	#tag EndProperty
 
 	#tag Property, Flags = &h1
 		Protected OutBuffer As ZstdBuffer

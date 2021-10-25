@@ -46,12 +46,140 @@ Inherits TestGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub ConsecutiveFlushTest()
+		  var compressor as new ZstdStreamCompressor_MTC
+		  compressor.Flush
+		  Assert.Pass "Compressor flush before use"
+		  
+		  compressor.Write "ABC"
+		  compressor.Flush
+		  compressor.Flush
+		  Assert.Pass "Compresser flush twice before ReadAll"
+		  
+		  var compressed as string = compressor.ReadAll
+		  compressor.Flush
+		  Assert.AreEqual "", compressor.ReadAll, "Compressor should have been empty after flush"
+		  
+		  var decompressor as new ZstdStreamDecompressor_MTC
+		  decompressor.Flush
+		  Assert.Pass "Decompressor flush before use"
+		  
+		  decompressor.Write compressed
+		  decompressor.Flush
+		  decompressor.Flush
+		  Assert.Pass "Decompressor flush twice before ReadAll"
+		  
+		  var decompressed as string = decompressor.ReadAll( Encodings.UTF8 )
+		  Assert.AreSame "ABC", decompressed
+		  
+		  decompressor.Flush
+		  Assert.AreEqual "", decompressor.ReadAll, "Decompressor should have been empty after flush"
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub DataAvailableEventThroughThreadTest()
 		  StreamThread = new Thread
 		  AddHandler StreamThread.Run, WeakAddressOf StreamThread_Run
 		  
 		  StreamThread.Start
 		  AsyncAwait 5
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub PartialStreamTest()
+		  var compressor as new ZstdStreamCompressor_MTC
+		  compressor.Write "ABC"
+		  compressor.Flush
+		  var compressed1 as string = compressor.ReadAll
+		  
+		  compressor.Write "123"
+		  compressor.Flush
+		  var compressed2 as string = compressor.ReadAll
+		  
+		  var decompressor as new ZstdStreamDecompressor_MTC
+		  decompressor.Write compressed1 + compressed2
+		  decompressor.Flush
+		  var actual as string = decompressor.ReadAll( Encodings.UTF8 )
+		  Assert.AreSame "ABC123", actual, "Combined does not match"
+		  
+		  var stages() as string
+		  decompressor.Write compressed1.LeftBytes( compressed1.Bytes - 6 )
+		  stages.Add decompressor.ReadAll( Encodings.UTF8 )
+		  
+		  decompressor.Write compressed1.RightBytes( 6 ) + compressed2.LeftBytes( compressed2.Bytes - 7 )
+		  stages.Add decompressor.ReadAll( Encodings.UTF8 )
+		  
+		  decompressor.Write compressed2.RightBytes( 7 )
+		  stages.Add decompressor.ReadAll( Encodings.UTF8 )
+		  
+		  decompressor.Flush
+		  stages.Add decompressor.ReadAll( Encodings.UTF8 )
+		  
+		  var final as string = String.FromArray( stages, "" )
+		  Assert.AreSame "ABC123", final
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub ReadFrameTest()
+		  var compressor as new ZstdStreamCompressor_MTC
+		  compressor.Write "ABC"
+		  compressor.Flush
+		  var compressed as string = compressor.ReadFrame
+		  
+		  compressor.Write "123"
+		  compressor.Flush
+		  compressed = compressed + compressor.ReadFrame
+		  
+		  var decompressor as new ZstdStreamDecompressor_MTC
+		  
+		  var frames() as string
+		  
+		  for i as integer = 0 to compressed.Bytes
+		    var char as string = compressed.MiddleBytes( i, 1 )
+		    
+		    decompressor.Write char
+		    var frame as string = decompressor.ReadFrame( Encodings.UTF8 )
+		    if frame <> "" then
+		      frames.Add frame
+		    end if
+		  next
+		  decompressor.Flush
+		  Assert.AreEqual "", decompressor.ReadAll
+		  
+		  var frameCount as integer = frames.Count
+		  Assert.AreEqual 2, frameCount
+		  
+		  if frameCount = 2 then
+		    Assert.AreSame "ABC", frames( 0 )
+		    Assert.AreSame "123", frames( 1 )
+		  end if
+		  
+		  frames.RemoveAll
+		  for i as integer = 0 to compressed.Bytes
+		    var char as string = compressed.MiddleBytes( i, 1 )
+		    
+		    decompressor.Write char
+		  next
+		  decompressor.Flush
+		  
+		  while decompressor.IsFrameAvailable
+		    var frame as string = decompressor.ReadFrame( Encodings.UTF8 )
+		    frames.Add frame
+		  wend
+		  
+		  frameCount = frames.Count
+		  Assert.AreEqual 2, frameCount, "FrameCount is not unexpected"
+		  
+		  if frameCount = 2 then
+		    Assert.AreSame "ABC", frames( 0 )
+		    Assert.AreSame "123", frames( 1 )
+		  end if
 		  
 		End Sub
 	#tag EndMethod

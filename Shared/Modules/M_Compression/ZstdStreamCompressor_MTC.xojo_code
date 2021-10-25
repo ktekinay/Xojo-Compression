@@ -5,23 +5,31 @@ Inherits M_Compression.ZstdStream
 		Sub DoFlush()
 		  var dataRemaining as UInteger
 		  
-		  do
-		    dataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.ContinueIt )
+		  if not IsFrameComplete then
+		    do
+		      dataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.ContinueIt )
+		      FlushBuffer OutBuffer
+		      
+		      if InBuffer.Pos >= InBuffer.VirtualSize then
+		        InBuffer.Pos = 0
+		        InBuffer.VirtualSize = 0
+		      end if
+		    loop until dataRemaining = 0
+		    
+		    do
+		      dataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.FlushIt )
+		      FlushBuffer OutBuffer
+		    loop until dataRemaining = 0
+		    
+		    dataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.EndIt )
 		    FlushBuffer OutBuffer
 		    
-		    if InBuffer.Pos >= InBuffer.VirtualSize then
-		      InBuffer.Pos = 0
-		      InBuffer.VirtualSize = 0
+		    if DataBuffer.Count <> 0 and DataBuffer( DataBuffer.LastRowIndex ) <> "" then
+		      DataBuffer.Add "" // Mark the end of frame
 		    end if
-		  loop until dataRemaining = 0
-		  
-		  do
-		    dataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.FlushIt )
-		    FlushBuffer OutBuffer
-		  loop until dataRemaining = 0
-		  
-		  dataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.EndIt )
-		  FlushBuffer OutBuffer
+		    
+		    IsFrameComplete = true
+		  end if
 		  
 		End Sub
 	#tag EndEvent
@@ -56,14 +64,16 @@ Inherits M_Compression.ZstdStream
 		    OutBufferData = new MemoryBlock( outBufferSize )
 		  end if
 		  
+		  
 		End Sub
 	#tag EndEvent
 
-	#tag Event
-		Sub DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer, ByRef dataRemaining As UInteger)
+	#tag Event , Description = 506572666F726D207468652057726974652C2072657475726E206461746152656D61696E696E6720696E2074686520706172616D6574657220616E64207768657468657220746865206672616D6520697320636F6D706C65746520696E2074686520726573756C742E
+		Function DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer, ByRef dataRemaining As UInteger) As Boolean
 		  dataRemaining = CompressStream2( outBuffer, inBuffer, Directives.ContinueIt )
+		  return false // The frame is not complete until a Flush
 		  
-		End Sub
+		End Function
 	#tag EndEvent
 
 

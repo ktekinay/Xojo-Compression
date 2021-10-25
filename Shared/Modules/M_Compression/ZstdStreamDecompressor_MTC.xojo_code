@@ -5,7 +5,7 @@ Inherits M_Compression.ZstdStream
 		Sub DoFlush()
 		  var dataRemaining as UInteger
 		  
-		  do
+		  while not IsFrameComplete or InBuffer.Pos < InBuffer.VirtualSize
 		    dataRemaining = DecompressStream( OutBuffer, InBuffer )
 		    if OutBuffer.Pos >= OutBuffer.VirtualSize then
 		      FlushBuffer OutBuffer
@@ -15,7 +15,9 @@ Inherits M_Compression.ZstdStream
 		      InBuffer.Pos = 0
 		      InBuffer.VirtualSize = 0
 		    end if
-		  loop until dataRemaining = 0
+		    
+		    IsFrameComplete = dataRemaining = 0 // Have to set this here
+		  wend
 		  
 		End Sub
 	#tag EndEvent
@@ -45,14 +47,17 @@ Inherits M_Compression.ZstdStream
 		  InBufferData = new MemoryBlock( inBufferSize )
 		  OutBufferData = new MemoryBlock( outBufferSize )
 		  
+		  IsAlwaysWrite = true
+		  
 		End Sub
 	#tag EndEvent
 
-	#tag Event
-		Sub DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer, ByRef dataRemaining As UInteger)
+	#tag Event , Description = 506572666F726D207468652057726974652C2072657475726E206461746152656D61696E696E6720696E2074686520706172616D6574657220616E64207768657468657220746865206672616D6520697320636F6D706C65746520696E2074686520726573756C742E
+		Function DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer, ByRef dataRemaining As UInteger) As Boolean
 		  dataRemaining = DecompressStream( outBuffer, inBuffer )
+		  return dataRemaining = 0
 		  
-		End Sub
+		End Function
 	#tag EndEvent
 
 
