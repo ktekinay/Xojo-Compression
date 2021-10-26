@@ -40,6 +40,42 @@ Inherits TestGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub CompressCompressedTest()
+		  var f as FolderItem = SpecialFolder.Resource( "json_test.txt.zst" )
+		  
+		  var bs as BinaryStream = BinaryStream.Open( f )
+		  var fileLength as integer = bs.Length
+		  var contents as string = bs.Read( fileLength )
+		  bs.Close
+		  
+		  var compressor as new ZstdStreamCompressor_MTC
+		  StartTestTimer( "compress all" )
+		  
+		  StartTestTimer( "compress first chunk" )
+		  compressor.Write contents.LeftBytes( compressor.RecommendedChunkSize )
+		  Assert.IsTrue compressor.BytesAvailable >= compressor.RecommendedChunkSize
+		  LogTestTimer( "compress first chunk" )
+		  
+		  compressor.Write contents.MiddleBytes( compressor.RecommendedChunkSize )
+		  compressor.Flush
+		  LogTestTimer( "compress all" )
+		  
+		  var compressed as string = compressor.ReadAll
+		  var compressedBytes as integer = compressed.Bytes
+		  
+		  var decompressor as new ZstdStreamDecompressor_MTC
+		  decompressor.Write compressed
+		  decompressor.Flush
+		  var decompressed as string = decompressor.ReadAll
+		  
+		  Assert.IsTrue compressedBytes <= ( fileLength + 1024 ) // Within a KB
+		  Assert.AreSame contents, decompressed
+		  
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub ConcurrentThreadTest()
 		  AsyncAwait 5
 		  
