@@ -4,16 +4,28 @@ Inherits ZstdBase
 Implements Readable,Writeable
 	#tag Method, Flags = &h1
 		Protected Sub AddToDataBuffer(s As String)
+		  BufferSemaphore.Signal
+		  
 		  if s <> "" then
 		    DataBuffer.Add s
 		    DataBufferBytes = DataBufferBytes + s.Bytes
 		  end if
+		  
+		  BufferSemaphore.Release
 		  
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
 		Protected Sub ClearDataBuffer()
+		  //**********************************************************/
+		  //*                                                        */
+		  //*                        WARNING:                        */
+		  //*                                                        */
+		  //*    The BufferSemaphore must be set before this call    */
+		  //*                                                        */
+		  //**********************************************************/
+		  
 		  DataBuffer.RemoveAll
 		  DataBufferBytes = 0
 		  
@@ -109,17 +121,25 @@ Implements Readable,Writeable
 
 	#tag Method, Flags = &h1
 		Protected Function GetDataBuffer() As String
+		  //**********************************************************/
+		  //*                                                        */
+		  //*                        WARNING:                        */
+		  //*                                                        */
+		  //*    The BufferSemaphore must be set before this call    */
+		  //*                                                        */
+		  //**********************************************************/
+		  
+		  var buffer as string
+		  
 		  if DataBuffer.Count = 1 then
-		    return DataBuffer( 0 )
+		    buffer = DataBuffer( 0 )
 		    
-		  elseif DataBuffer.Count = 0 then
-		    return ""
-		    
-		  else
-		    var buffer as string = String.FromArray( DataBuffer, "" )
-		    return buffer
+		  elseif DataBuffer.Count <> 0 then
+		    buffer = String.FromArray( DataBuffer, "" )
 		    
 		  end if
+		  
+		  return buffer
 		  
 		End Function
 	#tag EndMethod
@@ -154,25 +174,84 @@ Implements Readable,Writeable
 		Function Read(count As Integer, encoding As TextEncoding = Nil) As String
 		  // Part of the Readable interface.
 		  
-		  var returnValue as string 
+		  BufferSemaphore.Signal
 		  
-		  if count > 0 then
-		    var current as string = GetDataBuffer
+		  var returnValue as string
+		  
+		  if DataBufferBytes = 0 or count = 0 then
+		    //
+		    // Do nothing
+		    //
+		    
+		  elseif count >= DataBufferBytes then
+		    returnValue = GetDataBuffer
 		    ClearDataBuffer
 		    
-		    if count >= current.Bytes then
-		      returnValue = current
-		      current = ""
+		  else // We have to examine each element of the array
+		    var resultBuilder() as string
+		    var startAtDataBufferIndex as integer = 0
+		    
+		    for i as integer = 0 to DataBuffer.LastRowIndex
+		      var row as string = DataBuffer( i )
+		      if row = "" then
+		        continue
+		      end if
+		      
+		      var rowBytes as integer = row.Bytes
+		      
+		      if rowBytes <= count then
+		        //
+		        // Not enough to make up this count
+		        //
+		        resultBuilder.Add row
+		        count = count - rowBytes
+		        
+		      elseif rowBytes = count then
+		        //
+		        // Just enough
+		        //
+		        resultBuilder.Add row
+		        startAtDataBufferIndex = i + 1
+		        exit for i
+		        
+		      else // rowBytes has more than we need
+		        resultBuilder.Add row.MiddleBytes( 0, count )
+		        DataBuffer( i ) = row.MiddleBytes( count )
+		        startAtDataBufferIndex = i
+		        exit for i
+		      end if
+		    next
+		    
+		    returnValue = String.FromArray( resultBuilder, "" )
+		    
+		    //
+		    // Replace the DataBuffer
+		    //
+		    if startAtDataBufferIndex > DataBuffer.LastRowIndex then
+		      ClearDataBuffer
+		      
 		    else
-		      returnValue = current.MiddleBytes( 0, count )
-		      current = current.MiddleBytes( count )
+		      if DataBuffer( startAtDataBufferIndex ) = "" then
+		        //
+		        // Frame marker
+		        //
+		        startAtDataBufferIndex = startAtDataBufferIndex + 1
+		      end if
+		      
+		      var replacementArr() as string
+		      for i as integer = startAtDataBufferIndex to DataBuffer.LastRowIndex
+		        replacementArr.Add DataBuffer( i )
+		      next
+		      
+		      DataBuffer = replacementArr
+		      DataBufferBytes = DataBufferBytes - returnValue.Bytes
 		    end if
-		    
-		    AddToDataBuffer current
-		    
-		    if encoding <> nil then
-		      returnValue = returnValue.DefineEncoding( encoding )
-		    end if
+		  end if
+		  
+		  BufferSemaphore.Release
+		  
+		  if returnValue <> "" and encoding isa object then
+		    returnValue = returnValue.DefineEncoding( encoding )
 		  end if
 		  
 		  return returnValue
@@ -199,6 +278,8 @@ Implements Readable,Writeable
 	#tag Method, Flags = &h0, Description = 52657475726E20616E6420636C656172206E65787420636F6D706C657465206672616D652E
 		Function ReadFrame(encoding As TextEncoding = Nil) As String
 		  var frame as string
+		  
+		  BufferSemaphore.Signal
 		  
 		  if DataBufferBytes <> 0 then
 		    
@@ -234,6 +315,8 @@ Implements Readable,Writeable
 		    
 		  end if
 		  
+		  BufferSemaphore.Release
+		  
 		  return frame
 		  
 		End Function
@@ -241,6 +324,10 @@ Implements Readable,Writeable
 
 	#tag Method, Flags = &h1
 		Protected Sub Reset()
+		  if BufferSemaphore is nil then
+		    BufferSemaphore = new Semaphore
+		  end if
+		  
 		  RaiseEvent DoReset
 		  
 		  InBuffer.Data = InBufferData
@@ -423,7 +510,7 @@ Implements Readable,Writeable
 	#tag EndMethod
 
 
-	#tag Hook, Flags = &h0
+	#tag Hook, Flags = &h0, Description = 4461746120697320617661696C61626C652E2055736520526561642C2052656164416C6C2C206F7220526561644672616D65207768656E2049734672616D65436F6D706C657465203D205472756520746F20726561642069742E
 		Event DataAvailable()
 	#tag EndHook
 
@@ -439,6 +526,10 @@ Implements Readable,Writeable
 		Event DoWrite(ByRef outBuffer As ZstdBuffer, ByRef inBuffer As ZstdBuffer, ByRef dataRemaining As UInteger) As Boolean
 	#tag EndHook
 
+
+	#tag Property, Flags = &h21
+		Private BufferSemaphore As Semaphore
+	#tag EndProperty
 
 	#tag ComputedProperty, Flags = &h21
 		#tag Getter
@@ -484,7 +575,7 @@ Implements Readable,Writeable
 		Protected IsAlwaysWrite As Boolean
 	#tag EndProperty
 
-	#tag ComputedProperty, Flags = &h0
+	#tag ComputedProperty, Flags = &h0, Description = 536F6D65206461746120697320617661696C61626C6520696E20746865206275666665722E2055736520526561642C2052656164416C6C2C206F7220526561644672616D6520746F2066657463682069742E2044617461207468617420686173206265656E2072656164207468726F756768206F6E65206F662074686F73652066756E6374696F6E732077696C6C20626520636C65617265642066726F6D20746865206275666665722E
 		#tag Getter
 			Get
 			  return DataBufferBytes <> 0

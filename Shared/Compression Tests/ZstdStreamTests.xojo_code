@@ -185,6 +185,49 @@ Inherits TestGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub ReadTest()
+		  var data as string = "ABC123"
+		  
+		  var compressor as new ZstdStreamCompressor_MTC
+		  compressor.Write data.MiddleBytes( 0, data.Bytes \ 2 )
+		  compressor.Flush
+		  var compressed as string = compressor.ReadAll
+		  
+		  compressor.Write data.MiddleBytes( data.Bytes \ 2 )
+		  compressor.Flush
+		  compressed = compressed + compressor.ReadAll
+		  
+		  var decompressor as new ZstdStreamDecompressor_MTC
+		  decompressor.Write compressed
+		  decompressor.Flush
+		  
+		  var dataArr() as string = data.SplitBytes( "" )
+		  for i as integer = 0 to dataArr.LastRowIndex
+		    var readChar as string = decompressor.Read( 1, dataArr( i ).Encoding )
+		    Assert.AreSame dataArr( i ), readChar, dataArr( i )
+		  next
+		  
+		  Assert.IsTrue decompressor.EndOfFile
+		  Assert.IsFalse decompressor.IsDataAvailable
+		  
+		  decompressor.Write compressed
+		  decompressor.Flush
+		  
+		  var part as string = decompressor.Read( 2, Encodings.UTF8 )
+		  Assert.AreSame data.LeftBytes( 2 ), part, data.LeftBytes( 2 )
+		  
+		  part = decompressor.ReadFrame( Encodings.UTF8 )
+		  Assert.AreSame data.MiddleBytes( 2, 1 ), part, data.MiddleBytes( 2, 1 )
+		  
+		  part = decompressor.Read( 1, Encodings.UTF8 )
+		  Assert.AreSame data.MiddleBytes( 3, 1), part, data.MiddleBytes( 3, 1)
+		  
+		  part = decompressor.ReadFrame( Encodings.UTF8 )
+		  Assert.AreSame data.RightBytes( 2 ), part, data.RightBytes( 2 )
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub ReuseTest()
 		  var compressor as new ZstdStreamCompressor_MTC( Zstd_MTC.LevelFast )
 		  var decompressor as new ZstdStreamDecompressor_MTC
