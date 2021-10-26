@@ -531,6 +531,16 @@ Implements Readable,Writeable
 		Private BufferSemaphore As Semaphore
 	#tag EndProperty
 
+	#tag ComputedProperty, Flags = &h0, Description = 436F756E74206F66206279746573207468617420776F756C642062652072657475726E65642062792052656164416C6C2E
+		#tag Getter
+			Get
+			  return DataBufferBytes
+			  
+			End Get
+		#tag EndGetter
+		BytesAvailable As Integer
+	#tag EndComputedProperty
+
 	#tag ComputedProperty, Flags = &h21
 		#tag Getter
 			Get
@@ -668,6 +678,14 @@ Implements Readable,Writeable
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="IsDataAvailable"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="IsFrameAvailable"
 			Visible=false
 			Group="Behavior"
 			InitialValue=""

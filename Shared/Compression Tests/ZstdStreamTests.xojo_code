@@ -2,6 +2,44 @@
 Protected Class ZstdStreamTests
 Inherits TestGroup
 	#tag Method, Flags = &h0
+		Sub BytesAvailableTest()
+		  var compressor as new ZstdStreamCompressor_MTC( Zstd_MTC.LevelFast )
+		  
+		  var s as string = CompressionTestGroup.BigData
+		  var chunk as string
+		  var bytesAvailable as integer
+		  var builder() as string
+		  
+		  for pos as integer = 0 to s.Bytes - 1 step compressor.RecommendedChunkSize
+		    compressor.Write s.MiddleBytes( pos, compressor.RecommendedChunkSize )
+		    bytesAvailable = compressor.BytesAvailable
+		    chunk = compressor.ReadAll
+		    Assert.AreEqual chunk.Bytes, bytesAvailable
+		    builder.Add chunk
+		  next
+		  compressor.Flush
+		  bytesAvailable = compressor.BytesAvailable
+		  chunk = compressor.ReadAll
+		  builder.Add chunk
+		  Assert.AreEqual chunk.Bytes, bytesAvailable, "Compressor final"
+		  
+		  var decompressor as new ZstdStreamDecompressor_MTC
+		  
+		  for i as integer = 0 to builder.LastRowIndex
+		    decompressor.Write builder( i )
+		    bytesAvailable = decompressor.BytesAvailable
+		    chunk = decompressor.ReadAll
+		    Assert.AreEqual chunk.Bytes, bytesAvailable
+		  next
+		  decompressor.Flush
+		  bytesAvailable = decompressor.BytesAvailable
+		  chunk = decompressor.ReadAll
+		  Assert.AreEqual chunk.Bytes, bytesAvailable, "Decompressor final"
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub ConcurrentThreadTest()
 		  AsyncAwait 5
 		  
