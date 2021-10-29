@@ -1,6 +1,6 @@
 #tag Class
 Private Class DCTX
-Inherits M_Compression.ZstdStructure
+Inherits ZstdStructure
 	#tag Event , Description = 43726561746520616E6420696E697469616C697A652061206E6577207374727563747572652E
 		Function CreateStructure() As Ptr
 		  #if TargetMacOS then
@@ -32,6 +32,44 @@ Inherits M_Compression.ZstdStructure
 		  
 		End Function
 	#tag EndEvent
+
+
+	#tag Method, Flags = &h0
+		Sub ResetSession()
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
+		  #endif
+		  
+		  const kResetSessionOnly as integer = 1
+		  
+		  declare function ZSTD_DCtx_reset lib kLibZstd ( dctx as ptr, directive as UInt32 ) as UInteger
+		  
+		  var code as UInteger = ZSTD_DCtx_reset( self, kResetSessionOnly )
+		  ZstdMaybeRaiseException code
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub SetParameter(param As Integer, value As Integer)
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
+		  #endif
+		  
+		  declare function ZSTD_DCtx_setParameter lib kLibZstd ( dctx as ptr, param as Int32, value as Int32 ) as UInteger
+		  var code as UInteger = ZSTD_DCtx_setParameter( self, param, value )
+		  ZstdMaybeRaiseException( code )
+		  
+		End Sub
+	#tag EndMethod
 
 
 	#tag ViewBehavior

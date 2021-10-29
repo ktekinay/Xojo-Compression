@@ -1,13 +1,20 @@
 #tag Class
 Class ZstdStreamCompressor_MTC
 Inherits M_Compression.ZstdStream
+	#tag Event , Description = 41626F757420746F20777269746520746F20612073747265616D207468617420686173206265656E20496E697465642E
+		Sub BeforeFirstWrite()
+		  CompressContext.SetParameter( CCTX.kParamNbWorkers, Cores )
+		  
+		End Sub
+	#tag EndEvent
+
 	#tag Event
 		Sub DoFlush()
 		  var dataRemaining as UInteger
 		  
 		  if not IsFrameComplete then
-		    do
-		      dataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.ContinueIt )
+		    do 
+		      dataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.EndIt )
 		      FlushBuffer OutBuffer
 		      
 		      if InBuffer.Pos >= InBuffer.VirtualSize then
@@ -15,14 +22,6 @@ Inherits M_Compression.ZstdStream
 		        InBuffer.VirtualSize = 0
 		      end if
 		    loop until dataRemaining = 0
-		    
-		    do
-		      dataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.FlushIt )
-		      FlushBuffer OutBuffer
-		    loop until dataRemaining = 0
-		    
-		    dataRemaining = CompressStream2( OutBuffer, InBuffer, Directives.EndIt )
-		    FlushBuffer OutBuffer
 		    
 		    if DataBuffer.Count <> 0 and DataBuffer( DataBuffer.LastRowIndex ) <> "" then
 		      DataBuffer.Add "" // Mark the end of frame

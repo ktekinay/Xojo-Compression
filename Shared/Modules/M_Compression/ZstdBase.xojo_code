@@ -13,6 +13,8 @@ Private Class ZstdBase
 		  CompressContext = new CCTX
 		  DecompressContext = new DCTX
 		  
+		  Cores = DefaultCores
+		  
 		End Sub
 	#tag EndMethod
 
@@ -21,8 +23,16 @@ Private Class ZstdBase
 		Protected CompressContext As CCTX
 	#tag EndProperty
 
+	#tag Property, Flags = &h0, Description = 546865206E756D626572206F6620636F72657320746F2075736520666F7220636F6D7072657373696F6E2E
+		Cores As Integer
+	#tag EndProperty
+
 	#tag Property, Flags = &h1
 		Protected DecompressContext As DCTX
+	#tag EndProperty
+
+	#tag Property, Flags = &h0, Description = 466F7220636F6D7072657373696F6E2C20746865206E756D626572206F6620636F72657320746F207573652062792064656661756C742E
+		Shared DefaultCores As Integer = 0
 	#tag EndProperty
 
 	#tag Property, Flags = &h1

@@ -389,7 +389,11 @@ Implements Readable,Writeable
 		  end if
 		  
 		  IsFrameComplete = false // Assume this
-		  HasBeenInited = false
+		  
+		  if HasBeenInited then
+		    RaiseEvent BeforeFirstWrite
+		    HasBeenInited = false
+		  end if
 		  
 		  //
 		  // We have to split the src into chunks
@@ -520,6 +524,10 @@ Implements Readable,Writeable
 		End Function
 	#tag EndMethod
 
+
+	#tag Hook, Flags = &h0, Description = 41626F757420746F20777269746520746F20612073747265616D207468617420686173206265656E20496E697465642E
+		Event BeforeFirstWrite()
+	#tag EndHook
 
 	#tag Hook, Flags = &h0, Description = 4461746120697320617661696C61626C652E2055736520526561642C2052656164416C6C2C206F7220526561644672616D65207768656E2049734672616D65436F6D706C657465203D205472756520746F20726561642069742E
 		Event DataAvailable()

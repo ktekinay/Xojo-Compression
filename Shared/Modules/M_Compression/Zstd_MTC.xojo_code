@@ -19,14 +19,33 @@ Implements M_Compression.Compressor_MTC
 		    compressionLevel = DefaultLevel
 		  end if
 		  
-		  declare function ZSTD_compressCCtx lib kLibZstd ( _
+		  MySemaphore.Signal
+		  try
+		    CompressContext.SetParameter( CCTX.kParamCompressionLevel, compressionLevel )
+		    CompressContext.SetParameter( CCTX.kParamNbWorkers, Cores )
+		    CompressContext.SetPledgedSourceSize( src.Size )
+		    
+		  catch err as RuntimeException
+		    MySemaphore.Release
+		    raise err
+		  end try
+		  
+		  'declare function ZSTD_compressCCtx lib kLibZstd ( _
+		  'cctx as ptr, _
+		  'dst as ptr, dstCapacity as UInteger, _
+		  'src as ptr, srcSize as UInteger, _
+		  'compressionLevel as Int32 ) as UInteger
+		  '
+		  'var actualSize as UInteger = ZSTD_compressCCtx( CompressContext, dest, destSize, src, src.Size, compressionLevel )
+		  
+		  declare function ZSTD_compress2 lib kLibZstd ( _
 		  cctx as ptr, _
 		  dst as ptr, dstCapacity as UInteger, _
-		  src as ptr, srcSize as UInteger, _
-		  compressionLevel as Int32 ) as UInteger
+		  src as ptr, srcSize as UInteger _
+		  ) as UInteger
 		  
-		  MySemaphore.Signal
-		  var actualSize as UInteger = ZSTD_compressCCtx( CompressContext, dest, destSize, src, src.Size, compressionLevel )
+		  var actualSize as UInteger = ZSTD_compress2( CompressContext, dest, destSize, src, src.Size )
+		  
 		  MySemaphore.Release
 		  ZstdMaybeRaiseException actualSize
 		  
@@ -72,14 +91,14 @@ Implements M_Compression.Compressor_MTC
 		  
 		  var decompressedSize as UInteger = GetFrameContentSize( src )
 		  if decompressedSize = ZSTD_CONTENTSIZE_UNKNOWN then
-		    RaiseException "Unknown size, use streaming functions"
+		    RaiseException "Unknown size, use streaming classes"
 		  end if
 		  
 		  var dest as new MemoryBlock( decompressedSize )
 		  
+		  MySemaphore.Signal
 		  declare function ZSTD_decompressDCtx lib kLibZstd ( dctx as ptr, dst as ptr, dstCapacity as UInteger, src as ptr, compressedSize as UInteger ) as UInteger
 		  
-		  MySemaphore.Signal
 		  var actualSize as UInteger = _
 		  ZSTD_decompressDCtx( DecompressContext, dest, dest.Size, src, src.Size )
 		  MySemaphore.Release
