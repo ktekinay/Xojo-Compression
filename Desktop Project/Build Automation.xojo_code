@@ -10,6 +10,13 @@
 					FolderItem = Li4vLi4vUmVzb3VyY2VzL2pzb25fdGVzdC50eHQuenN0
 					FolderItem = Li4vLi4vUmVzb3VyY2VzL2pzb25fdGVzdF9zdHJlYW1fbGV2ZWwtMS56c3Q=
 				End
+				Begin CopyFilesBuildStep LinuxLibs
+					AppliesTo = 0
+					Architecture = 0
+					Destination = 2
+					Subdirectory = 
+					FolderItem = Li4vLi4vUmVzb3VyY2VzL0xpbnV4LzY0LWJpdC9saWJ6c3RkLnNvLjEuNS4w
+				End
 			End
 			Begin BuildStepList Mac OS X
 				Begin BuildProjectStep Build
