@@ -50,6 +50,22 @@ Inherits TestGroup
 		End Sub
 	#tag EndMethod
 
+	#tag Method, Flags = &h0
+		Sub CorruptedDataTest()
+		  var s as string = Crypto.GenerateRandomBytes( 20 )
+		  
+		  #pragma BreakOnExceptions false
+		  try
+		    call Decompress( s, 5 )
+		    Assert.Fail "Should have generated exception"
+		  catch err as CompressionException_MTC
+		    Assert.Pass
+		  end try
+		  #pragma BreakOnExceptions default
+		  
+		End Sub
+	#tag EndMethod
+
 	#tag Method, Flags = &h1
 		Protected Function Decompress(data As String, originalSize As Integer, encoding As TextEncoding = Nil, tag As Variant = Nil) As String
 		  StartTestTimer "decompressed"

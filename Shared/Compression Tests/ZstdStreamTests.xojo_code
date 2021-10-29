@@ -153,6 +153,34 @@ Inherits TestGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub CorruptedDataTest()
+		  var compressor as new ZstdStreamCompressor_MTC
+		  var s as string = "ABC "
+		  s = s + s + s + s
+		  s = s + s + s + s
+		  compressor.Write s
+		  compressor.Flush
+		  
+		  var mb as MemoryBlock = compressor.ReadAll
+		  var middleByteIndex as integer = mb.Size \ 2 - 2
+		  mb.UInt32Value( middleByteIndex ) = Bitwise.OnesComplement( mb.UInt32Value( middleByteIndex ) )
+		  s = mb
+		  
+		  var decompressor as new ZstdStreamDecompressor_MTC
+		  #pragma BreakOnExceptions false
+		  try
+		    decompressor.Write s
+		    decompressor.Flush
+		    Assert.Fail "Should have generated exception"
+		  catch err as CompressionException_MTC
+		    Assert.Pass
+		  end try
+		  #pragma BreakOnExceptions default
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub DataAvailableEventThroughThreadTest()
 		  StreamThread = new Thread
 		  AddHandler StreamThread.Run, WeakAddressOf StreamThread_Run
