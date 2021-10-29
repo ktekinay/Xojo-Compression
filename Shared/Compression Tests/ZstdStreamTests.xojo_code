@@ -330,6 +330,45 @@ Inherits TestGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub ResetTest()
+		  var compressor as new ZstdStreamCompressor_MTC
+		  compressor.Write "abc"
+		  Assert.AreEqual 0, compressor.BytesAvailable
+		  
+		  compressor.Flush
+		  Assert.AreNotEqual 0, compressor.BytesAvailable
+		  
+		  compressor.Reset
+		  Assert.AreEqual 0, compressor.BytesAvailable
+		  
+		  compressor.Write "abc"
+		  compressor.Flush
+		  var compressed as string = compressor.ReadAll
+		  
+		  var decompressor as new ZstdStreamDecompressor_MTC
+		  decompressor.Write compressed
+		  Assert.AreEqual 3, decompressor.BytesAvailable
+		  decompressor.Reset
+		  Assert.AreEqual 0, decompressor.BytesAvailable
+		  
+		  decompressor.Write compressed
+		  decompressor.Flush
+		  Assert.AreEqual decompressor.ReadAll, "abc"
+		  
+		  compressor.Write "abc"
+		  compressor.Reset
+		  compressor.Flush
+		  Assert.AreEqual 0, compressor.BytesAvailable
+		  
+		  decompressor.Write compressed
+		  decompressor.Reset
+		  decompressor.Flush
+		  Assert.AreEqual 0, decompressor.BytesAvailable
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub ReuseTest()
 		  var compressor as new ZstdStreamCompressor_MTC( Zstd_MTC.LevelFast )
 		  var decompressor as new ZstdStreamDecompressor_MTC

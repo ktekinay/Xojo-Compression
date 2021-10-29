@@ -23,7 +23,7 @@ Inherits M_Compression.ZstdStream
 	#tag EndEvent
 
 	#tag Event
-		Sub DoReset()
+		Sub DoInit()
 		  #if TargetMacOS then
 		    #if TargetARM then
 		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
@@ -65,7 +65,7 @@ Inherits M_Compression.ZstdStream
 		Sub Constructor()
 		  super.Constructor( kLevelDefault )
 		  
-		  Reset
+		  Init
 		  
 		End Sub
 	#tag EndMethod
@@ -127,6 +127,22 @@ Inherits M_Compression.ZstdStream
 
 
 	#tag ViewBehavior
+		#tag ViewProperty
+			Name="IsFrameAvailable"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Boolean"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="BytesAvailable"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true

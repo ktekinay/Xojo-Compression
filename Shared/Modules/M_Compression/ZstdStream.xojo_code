@@ -70,7 +70,7 @@ Implements Readable,Writeable
 		Function EndOfFile() As Boolean
 		  // Part of the Readable interface.
 		  
-		  return HasBeenReset and DataBufferBytes = 0
+		  return HasBeenInited and DataBufferBytes = 0
 		  
 		End Function
 	#tag EndMethod
@@ -88,7 +88,7 @@ Implements Readable,Writeable
 		Sub Flush()
 		  // Part of the Writeable interface.
 		  
-		  if HasBeenReset then
+		  if HasBeenInited then
 		    return
 		  end if
 		  
@@ -104,7 +104,7 @@ Implements Readable,Writeable
 		    RaiseDataAvailable
 		  end if
 		  
-		  Reset
+		  Init
 		  
 		End Sub
 	#tag EndMethod
@@ -142,6 +142,41 @@ Implements Readable,Writeable
 		  return buffer
 		  
 		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h1
+		Protected Sub Init()
+		  if BufferSemaphore is nil then
+		    BufferSemaphore = new Semaphore
+		  end if
+		  
+		  RaiseEvent DoInit
+		  
+		  InBuffer.Data = InBufferData
+		  InBuffer.VirtualSize = 0
+		  InBuffer.Pos = 0
+		  
+		  OutBuffer.Data = OutBufferData
+		  OutBuffer.VirtualSize = OutBufferData.Size
+		  OutBuffer.Pos = 0
+		  
+		  HasBeenInited = true
+		  
+		  WriteThreadID = kThreadIdNone
+		  
+		  if DataAvailableTimer is nil then
+		    DataAvailableTimer = new Timer
+		    DataAvailableTimer.Period = 1
+		    DataAvailableTimer.RunMode = Timer.RunModes.Off
+		    
+		    AddHandler DataAvailableTimer.Action, WeakAddressOf RaiseDataAvailable
+		  end if
+		  
+		  //
+		  // If the DataAvailableTimer is set to fire, we will let it do that
+		  //
+		  
+		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
@@ -322,37 +357,13 @@ Implements Readable,Writeable
 		End Function
 	#tag EndMethod
 
-	#tag Method, Flags = &h1
-		Protected Sub Reset()
-		  if BufferSemaphore is nil then
-		    BufferSemaphore = new Semaphore
-		  end if
+	#tag Method, Flags = &h0, Description = 52657365747320666F7220746865206E657874207573652E2057696C6C20636C65617220616E792072656D61696E696E67206461746120696E20746865206275666665722E
+		Sub Reset()
+		  Init
 		  
-		  RaiseEvent DoReset
-		  
-		  InBuffer.Data = InBufferData
-		  InBuffer.VirtualSize = 0
-		  InBuffer.Pos = 0
-		  
-		  OutBuffer.Data = OutBufferData
-		  OutBuffer.VirtualSize = OutBufferData.Size
-		  OutBuffer.Pos = 0
-		  
-		  HasBeenReset = true
-		  
-		  WriteThreadID = kThreadIdNone
-		  
-		  if DataAvailableTimer is nil then
-		    DataAvailableTimer = new Timer
-		    DataAvailableTimer.Period = 1
-		    DataAvailableTimer.RunMode = Timer.RunModes.Off
-		    
-		    AddHandler DataAvailableTimer.Action, WeakAddressOf RaiseDataAvailable
-		  end if
-		  
-		  //
-		  // If the DataAvailableTimer is set to fire, we will let it do that
-		  //
+		  BufferSemaphore.Signal
+		  ClearDataBuffer
+		  BufferSemaphore.Release
 		  
 		End Sub
 	#tag EndMethod
@@ -378,7 +389,7 @@ Implements Readable,Writeable
 		  end if
 		  
 		  IsFrameComplete = false // Assume this
-		  HasBeenReset = false
+		  HasBeenInited = false
 		  
 		  //
 		  // We have to split the src into chunks
@@ -519,7 +530,7 @@ Implements Readable,Writeable
 	#tag EndHook
 
 	#tag Hook, Flags = &h0
-		Event DoReset()
+		Event DoInit()
 	#tag EndHook
 
 	#tag Hook, Flags = &h0, Description = 506572666F726D207468652057726974652C2072657475726E206461746152656D61696E696E6720696E2074686520706172616D6574657220616E64207768657468657220746865206672616D6520697320636F6D706C65746520696E2074686520726573756C742E
@@ -570,7 +581,7 @@ Implements Readable,Writeable
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
-		Protected HasBeenReset As Boolean = True
+		Protected HasBeenInited As Boolean = True
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
