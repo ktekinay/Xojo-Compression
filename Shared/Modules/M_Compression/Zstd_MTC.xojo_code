@@ -30,14 +30,6 @@ Implements M_Compression.Compressor_MTC
 		    raise err
 		  end try
 		  
-		  'declare function ZSTD_compressCCtx lib kLibZstd ( _
-		  'cctx as ptr, _
-		  'dst as ptr, dstCapacity as UInteger, _
-		  'src as ptr, srcSize as UInteger, _
-		  'compressionLevel as Int32 ) as UInteger
-		  '
-		  'var actualSize as UInteger = ZSTD_compressCCtx( CompressContext, dest, destSize, src, src.Size, compressionLevel )
-		  
 		  declare function ZSTD_compress2 lib kLibZstd ( _
 		  cctx as ptr, _
 		  dst as ptr, dstCapacity as UInteger, _
