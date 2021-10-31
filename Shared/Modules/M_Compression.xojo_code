@@ -2,7 +2,7 @@
 Protected Module M_Compression
 	#tag Method, Flags = &h21
 		Private Sub RaiseException(msg As String)
-		  var err as new RuntimeException
+		  var err as new CompressionException_MTC
 		  err.Message = msg
 		  raise err
 		  
@@ -68,6 +68,7 @@ Protected Module M_Compression
 	#tag Constant, Name = kLibZstd, Type = String, Dynamic = False, Default = \"libzstd.dylib", Scope = Private
 		#Tag Instance, Platform = Mac OS, Language = Default, Definition  = \"libzstd.dylib"
 		#Tag Instance, Platform = Windows, Language = Default, Definition  = \"libzstd.dll"
+		#Tag Instance, Platform = Linux, Language = Default, Definition  = \"libzstd.so.1.5.0"
 	#tag EndConstant
 
 

@@ -1,5 +1,6 @@
 #tag Class
 Class Zstd_MTC
+Inherits ZstdBase
 Implements M_Compression.Compressor_MTC
 	#tag Method, Flags = &h0
 		Function Compress(src As MemoryBlock, compressionLevel As Integer = kLevelDefault) As String
@@ -11,10 +12,6 @@ Implements M_Compression.Compressor_MTC
 		    #endif
 		  #endif
 		  
-		  if CompressContext is nil then
-		    CompressContext = new CCTX
-		  end if
-		  
 		  var destSize as integer = CompressBound( src )
 		  var dest as new MemoryBlock( destSize )
 		  
@@ -22,14 +19,25 @@ Implements M_Compression.Compressor_MTC
 		    compressionLevel = DefaultLevel
 		  end if
 		  
-		  declare function ZSTD_compressCCtx lib kLibZstd ( _
+		  MySemaphore.Signal
+		  try
+		    CompressContext.SetParameter( CCTX.kParamCompressionLevel, compressionLevel )
+		    CompressContext.SetParameter( CCTX.kParamNbWorkers, Cores )
+		    CompressContext.SetPledgedSourceSize( src.Size )
+		    
+		  catch err as RuntimeException
+		    MySemaphore.Release
+		    raise err
+		  end try
+		  
+		  declare function ZSTD_compress2 lib kLibZstd ( _
 		  cctx as ptr, _
 		  dst as ptr, dstCapacity as UInteger, _
-		  src as ptr, srcSize as UInteger, _
-		  compressionLevel as integer ) as UInteger
+		  src as ptr, srcSize as UInteger _
+		  ) as UInteger
 		  
-		  MySemaphore.Signal
-		  var actualSize as UInteger = ZSTD_compressCCtx( CompressContext, dest, destSize, src, src.Size, compressionLevel )
+		  var actualSize as UInteger = ZSTD_compress2( CompressContext, dest, destSize, src, src.Size )
+		  
 		  MySemaphore.Release
 		  ZstdMaybeRaiseException actualSize
 		  
@@ -56,11 +64,7 @@ Implements M_Compression.Compressor_MTC
 
 	#tag Method, Flags = &h0
 		Sub Constructor(defaultLevel As Integer = kLevelDefault)
-		  if defaultLevel = kLevelDefault then
-		    self.DefaultLevel = LevelDefault
-		  else
-		    self.DefaultLevel = defaultLevel
-		  end if
+		  super.Constructor( defaultLevel )
 		  
 		  MySemaphore = new Semaphore
 		  
@@ -77,20 +81,16 @@ Implements M_Compression.Compressor_MTC
 		    #endif
 		  #endif
 		  
-		  if DecompressContext is nil then
-		    DecompressContext = new DCTX
-		  end if
-		  
 		  var decompressedSize as UInteger = GetFrameContentSize( src )
 		  if decompressedSize = ZSTD_CONTENTSIZE_UNKNOWN then
-		    RaiseException "Unknown size, use streaming functions"
+		    RaiseException "Unknown size, use streaming classes"
 		  end if
 		  
 		  var dest as new MemoryBlock( decompressedSize )
 		  
+		  MySemaphore.Signal
 		  declare function ZSTD_decompressDCtx lib kLibZstd ( dctx as ptr, dst as ptr, dstCapacity as UInteger, src as ptr, compressedSize as UInteger ) as UInteger
 		  
-		  MySemaphore.Signal
 		  var actualSize as UInteger = _
 		  ZSTD_decompressDCtx( DecompressContext, dest, dest.Size, src, src.Size )
 		  MySemaphore.Release
@@ -124,138 +124,8 @@ Implements M_Compression.Compressor_MTC
 
 
 	#tag Property, Flags = &h21
-		Private CompressContext As CCTX
-	#tag EndProperty
-
-	#tag Property, Flags = &h21
-		Private DecompressContext As DCTX
-	#tag EndProperty
-
-	#tag Property, Flags = &h21
-		Private DefaultLevel As Integer
-	#tag EndProperty
-
-	#tag ComputedProperty, Flags = &h0
-		#tag Getter
-			Get
-			  #if TargetMacOS then
-			    #if TargetARM then
-			      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-			    #elseif TargetX86 then
-			      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
-			    #endif
-			  #endif
-			  
-			  declare function ZSTD_defaultCLevel lib kLibZstd () as integer
-			  return ZSTD_defaultCLevel
-			  
-			End Get
-		#tag EndGetter
-		Shared LevelDefault As Integer
-	#tag EndComputedProperty
-
-	#tag ComputedProperty, Flags = &h0
-		#tag Getter
-			Get
-			  return kLevelFast
-			  
-			End Get
-		#tag EndGetter
-		Shared LevelFast As Integer
-	#tag EndComputedProperty
-
-	#tag ComputedProperty, Flags = &h0
-		#tag Getter
-			Get
-			  #if TargetMacOS then
-			    #if TargetARM then
-			      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-			    #elseif TargetX86 then
-			      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
-			    #endif
-			  #endif
-			  
-			  declare function ZSTD_maxCLevel lib kLibZstd () as integer
-			  return ZSTD_maxCLevel
-			  
-			End Get
-		#tag EndGetter
-		Shared LevelMax As Integer
-	#tag EndComputedProperty
-
-	#tag ComputedProperty, Flags = &h0
-		#tag Getter
-			Get
-			  #if TargetMacOS then
-			    #if TargetARM then
-			      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-			    #elseif TargetX86 then
-			      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
-			    #endif
-			  #endif
-			  
-			  declare function ZSTD_minCLevel lib kLibZstd () as integer
-			  return ZSTD_minCLevel
-			  
-			End Get
-		#tag EndGetter
-		Shared LevelMin As Integer
-	#tag EndComputedProperty
-
-	#tag Property, Flags = &h21
 		Private MySemaphore As Semaphore
 	#tag EndProperty
-
-	#tag ComputedProperty, Flags = &h0
-		#tag Getter
-			Get
-			  #if TargetMacOS then
-			    #if TargetARM then
-			      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-			    #elseif TargetX86 then
-			      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
-			    #endif
-			  #endif
-			  
-			  declare function ZSTD_versionNumber lib kLibZstd () As UInteger
-			  return ZSTD_versionNumber()
-			  
-			End Get
-		#tag EndGetter
-		Shared Version As Integer
-	#tag EndComputedProperty
-
-	#tag ComputedProperty, Flags = &h0
-		#tag Getter
-			Get
-			  #if TargetMacOS then
-			    #if TargetARM then
-			      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
-			    #elseif TargetX86 then
-			      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
-			    #endif
-			  #endif
-			  
-			  declare function ZSTD_versionString lib kLibZstd () As CString
-			  return ZSTD_versionString()
-			  
-			End Get
-		#tag EndGetter
-		Shared VersionString As String
-	#tag EndComputedProperty
-
-
-	#tag Constant, Name = kLevelDefault, Type = Double, Dynamic = False, Default = \"-999999", Scope = Protected
-	#tag EndConstant
-
-	#tag Constant, Name = kLevelFast, Type = Double, Dynamic = False, Default = \"1", Scope = Protected
-	#tag EndConstant
-
-	#tag Constant, Name = ZSTD_CONTENTSIZE_ERROR, Type = Double, Dynamic = False, Default = \"&hFFFFFFFFFFFFFFFE", Scope = Private
-	#tag EndConstant
-
-	#tag Constant, Name = ZSTD_CONTENTSIZE_UNKNOWN, Type = Double, Dynamic = False, Default = \"&hFFFFFFFFFFFFFFFF", Scope = Private
-	#tag EndConstant
 
 
 	#tag ViewBehavior

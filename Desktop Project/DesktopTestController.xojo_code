@@ -12,6 +12,7 @@ Inherits TestController
 		  
 		  group = new SimpleZlibTests( self, "SimpleZlib" )
 		  group = new ZlibTests( self, "Zlib" )
+		  group = new ZstdStreamTests( self, "ZstdSteam" )
 		  group = new ZstdTests( self, "Zstd" )
 		  
 		End Sub

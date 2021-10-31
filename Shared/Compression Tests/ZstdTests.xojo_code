@@ -42,10 +42,43 @@ Inherits CompressionTestGroup
 		  try
 		    call Compressor.Decompress( s )
 		    Assert.Fail "Did not raise an exception"
-		  catch err as RuntimeException
+		  catch err as CompressionException_MTC
 		    Assert.Pass
 		  end try
 		  #pragma BreakOnExceptions default
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub MultipleCoreTest()
+		  const kFormat as string = "#,##0"
+		  const kCores as integer = 4
+		  
+		  var s as string = BigData
+		  var sBytes as integer = s.Bytes
+		  var level as integer = Zstd_MTC.LevelDefault
+		  
+		  Assert.Message "s.Bytes = " + sBytes.ToString( kFormat )
+		  Assert.Message "Compression Level = " + level.ToString
+		  Assert.Message "Cores = " + kCores.ToString
+		  
+		  Zstd_MTC( Compressor ).Cores = kCores
+		  
+		  var compressed as string 
+		  for i as integer = 1 to 2
+		    compressed = Compress( s, level )
+		  next i
+		  Assert.Message "compressed.Bytes = " + compressed.Bytes.ToString( kFormat )
+		  var ratio as double = 100.0 - ( ( compressed.Bytes / s.Bytes ) * 100.0 )
+		  Assert.Message "compression = " + ratio.ToString + "%"
+		  
+		  var decompressed as string
+		  for i as integer = 1 to 2
+		    decompressed = Decompress( compressed, s.Bytes, s.Encoding )
+		  next i
+		  
+		  Assert.AreSame s, decompressed
 		  
 		End Sub
 	#tag EndMethod
