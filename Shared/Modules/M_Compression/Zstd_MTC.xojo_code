@@ -2,6 +2,15 @@
 Class Zstd_MTC
 Inherits ZstdBase
 Implements M_Compression.Compressor_MTC
+	#tag Event
+		Sub DoConstruction()
+		  //
+		  // Placeholder to hide this from the outside
+		  //
+		End Sub
+	#tag EndEvent
+
+
 	#tag Method, Flags = &h0
 		Function Compress(src As MemoryBlock, compressionLevel As Integer = kLevelDefault) As String
 		  #if TargetMacOS then

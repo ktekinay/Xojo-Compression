@@ -2,6 +2,14 @@
 Protected Class ZstdStream
 Inherits ZstdBase
 Implements Readable,Writeable
+	#tag Event
+		Sub DoConstruction()
+		  Init
+		  
+		End Sub
+	#tag EndEvent
+
+
 	#tag Method, Flags = &h1
 		Protected Sub AddToDataBuffer(s As String)
 		  BufferSemaphore.Signal

@@ -67,8 +67,6 @@ Inherits M_Compression.ZstdStream
 		Sub Constructor()
 		  super.Constructor( kLevelDefault )
 		  
-		  Init
-		  
 		End Sub
 	#tag EndMethod
 

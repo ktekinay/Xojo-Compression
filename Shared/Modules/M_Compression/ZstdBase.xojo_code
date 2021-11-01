@@ -15,6 +15,8 @@ Private Class ZstdBase
 		  
 		  Cores = DefaultCores
 		  
+		  RaiseEvent DoConstruction
+		  
 		End Sub
 	#tag EndMethod
 
@@ -59,6 +61,11 @@ Private Class ZstdBase
 		  
 		End Sub
 	#tag EndMethod
+
+
+	#tag Hook, Flags = &h0
+		Event DoConstruction()
+	#tag EndHook
 
 
 	#tag Property, Flags = &h1
