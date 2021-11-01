@@ -15,15 +15,27 @@ Implements M_Compression.ZstdDictionaryInterface
 		    compressionLevel = Zstd_MTC.LevelDefault
 		  end if
 		  
-		  var dictBuffer as MemoryBlock = dictData
+		  //
+		  // Must be ready for an empty string
+		  //
+		  
+		  var dictMB as MemoryBlock
+		  var dictBuffer as ptr
+		  var dictBufferSize as integer
+		  
+		  if dictData <> "" then
+		    dictMB = dictData
+		    dictBuffer = dictMB
+		    dictBufferSize = dictMB.Size
+		  end if
 		  
 		  declare function ZSTD_createCDict lib kLibZstd ( dictBuffer as ptr, dictBufferSize as UInteger, compressionLevel as Int32 ) as ptr
 		  
-		  CDict = ZSTD_createCDict( dictBuffer, dictBuffer.Size, compressionLevel )
+		  CDict = ZSTD_createCDict( dictBuffer, dictBufferSize, compressionLevel )
 		  
 		  declare function ZSTD_createDDict lib kLibZStd ( dictbuffer as ptr, dictBufferSize as UInteger ) as ptr
 		  
-		  DDict = ZSTD_createDDict( dictBuffer, dictBuffer.Size )
+		  DDict = ZSTD_createDDict( dictBuffer, dictBufferSize )
 		  
 		  
 		End Sub
