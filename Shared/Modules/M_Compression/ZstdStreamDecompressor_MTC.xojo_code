@@ -32,11 +32,13 @@ Inherits M_Compression.ZstdStream
 		    #endif
 		  #endif
 		  
-		  var error as UInteger
-		  
-		  declare function ZSTD_initDStream lib kLibZstd ( zsc as ptr ) as UInteger
-		  error = ZSTD_initDStream( self.DecompressContext )
-		  ZstdMaybeRaiseException error 
+		  if self.Dictionary isa object then
+		    DecompressContext.ResetSession
+		  else
+		    declare function ZSTD_initDStream lib kLibZstd ( zsc as ptr ) as UInteger
+		    var error as UInteger = ZSTD_initDStream( self.DecompressContext )
+		    ZstdMaybeRaiseException error 
+		  end if
 		  
 		  var inbufferSize as UInteger = RecommendedChunkSize
 		  
