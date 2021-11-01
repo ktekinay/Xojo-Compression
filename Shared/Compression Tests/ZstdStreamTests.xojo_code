@@ -231,6 +231,114 @@ Inherits TestGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub DictionaryTest()
+		  var compressionLevel as integer = Zstd_MTC.LevelFast
+		  
+		  var compressor as ZstdStreamCompressor_MTC
+		  var bs as BinaryStream
+		  
+		  var sourceFolder as FolderItem = SpecialFolder.Resource( "zstd_dict_test_files" )
+		  
+		  //
+		  // Test without dictionary
+		  //
+		  compressor = new ZstdStreamCompressor_MTC( compressionLevel )
+		  
+		  var uncompressedSize as integer
+		  var noDictSize as integer
+		  
+		  const kLogKeyNoDict as string = "Compression without Dictionary"
+		  
+		  StartTestTimer kLogKeyNoDict
+		  
+		  for each f as FolderItem in sourceFolder.Children
+		    if f.Name.EndsWith( ".json" ) then
+		      bs = BinaryStream.Open( f )
+		      var contents as string = bs.Read( bs.Length )
+		      bs.Close
+		      
+		      uncompressedSize = uncompressedSize + contents.Bytes
+		      compressor.Write( contents )
+		      compressor.Flush
+		    end if
+		  next
+		  
+		  LogTestTimer kLogKeyNoDict
+		  
+		  noDictSize = compressor.BytesAvailable
+		  compressor.Reset
+		  
+		  Assert.Message "Uncompressed size: " + uncompressedSize.ToString( "#,##0" )
+		  Assert.Message "Compressed size without Dictionary: " + noDictSize.ToString( "#,##0" )
+		  
+		  var dictBuffer as string
+		  if true then
+		    var f as FolderItem = SpecialFolder.Resource( "zstd_dictionary" )
+		    bs = BinaryStream.Open( f )
+		    dictBuffer = bs.Read( bs.Length )
+		    bs.Close
+		  end if
+		  
+		  const kLogKeyCreateDict as string = "Create Dictionary"
+		  
+		  StartTestTimer kLogKeyCreateDict
+		  var zd as new ZstdDictionary_MTC( dictBuffer, compressionLevel )
+		  LogTestTimer kLogKeyCreateDict
+		  
+		  //
+		  // Now with a dictionary
+		  //
+		  compressor = new ZstdStreamCompressor_MTC( zd )
+		  
+		  var withDictSize as integer
+		  
+		  const kLogKeyWithDict as string = "Compression with Dictionary"
+		  
+		  StartTestTimer kLogKeyWithDict
+		  
+		  for each f as FolderItem in sourceFolder.Children
+		    if f.Name.EndsWith( ".json" ) then
+		      bs = BinaryStream.Open( f )
+		      var contents as string = bs.Read( bs.Length )
+		      bs.Close
+		      
+		      compressor.Write( contents )
+		      compressor.Flush
+		    end if
+		  next
+		  
+		  withDictSize = compressor.BytesAvailable
+		  var compressed as string = compressor.ReadAll
+		  
+		  LogTestTimer kLogKeyWithDict
+		  
+		  Assert.Message "Compressed size with Dictionary: " + withDictSize.ToString( "#,##0" )
+		  
+		  Assert.IsTrue withDictSize < noDictSize
+		  
+		  var decompressor as new ZstdStreamDecompressor_MTC
+		  
+		  #pragma BreakOnExceptions false
+		  try
+		    decompressor.Write compressed
+		    decompressor.Flush
+		    Assert.Fail "Should have raised Dictionary Mismatch exception"
+		  catch err as CompressionException_MTC
+		    Assert.Pass
+		  end try
+		  #pragma BreakOnExceptions default
+		  
+		  decompressor = new ZstdStreamDecompressor_MTC( zd )
+		  decompressor.Write compressed
+		  decompressor.Flush
+		  
+		  var decompressed as string = decompressor.ReadAll
+		  'Assert.AreEqual "ABC123", decompressed
+		  
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub PartialStreamTest()
 		  var compressor as new ZstdStreamCompressor_MTC
 		  compressor.Write "ABC"
