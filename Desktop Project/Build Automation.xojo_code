@@ -9,6 +9,8 @@
 					Subdirectory = 
 					FolderItem = Li4vLi4vUmVzb3VyY2VzL2pzb25fdGVzdC50eHQuenN0
 					FolderItem = Li4vLi4vUmVzb3VyY2VzL2pzb25fdGVzdF9zdHJlYW1fbGV2ZWwtMS56c3Q=
+					FolderItem = Li4vLi4vUmVzb3VyY2VzL3pzdGRfZGljdF90ZXN0X2ZpbGVzLw==
+					FolderItem = Li4vLi4vUmVzb3VyY2VzL3pzdGRfZGljdGlvbmFyeQ==
 				End
 				Begin CopyFilesBuildStep LinuxLibs
 					AppliesTo = 0
@@ -28,6 +30,8 @@
 					Subdirectory = 
 					FolderItem = Li4vLi4vUmVzb3VyY2VzL2pzb25fdGVzdC50eHQuenN0
 					FolderItem = Li4vLi4vUmVzb3VyY2VzL2pzb25fdGVzdF9zdHJlYW1fbGV2ZWwtMS56c3Q=
+					FolderItem = Li4vLi4vUmVzb3VyY2VzL3pzdGRfZGljdGlvbmFyeQ==
+					FolderItem = Li4vLi4vUmVzb3VyY2VzL3pzdGRfZGljdF90ZXN0X2ZpbGVzLw==
 				End
 				Begin CopyFilesBuildStep MacIntelLibs
 					AppliesTo = 0
@@ -54,6 +58,8 @@
 					Subdirectory = 
 					FolderItem = Li4vLi4vUmVzb3VyY2VzL2pzb25fdGVzdC50eHQuenN0
 					FolderItem = Li4vLi4vUmVzb3VyY2VzL2pzb25fdGVzdF9zdHJlYW1fbGV2ZWwtMS56c3Q=
+					FolderItem = Li4vLi4vUmVzb3VyY2VzL3pzdGRfZGljdF90ZXN0X2ZpbGVzLw==
+					FolderItem = Li4vLi4vUmVzb3VyY2VzL3pzdGRfZGljdGlvbmFyeQ==
 				End
 				Begin CopyFilesBuildStep WinLibs
 					AppliesTo = 0
