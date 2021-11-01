@@ -22,6 +22,11 @@ Private Class ZstdBase
 		Sub Constructor(dict As ZstdDictionary_MTC)
 		  Constructor kLevelDefault
 		  
+		  //
+		  // If dict is nil then we
+		  // want the NilObjectException
+		  //
+		  
 		  #if TargetMacOS then
 		    #if TargetARM then
 		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
@@ -35,11 +40,9 @@ Private Class ZstdBase
 		  var cdict as ptr
 		  var ddict as ptr
 		  
-		  if dict isa object then
-		    var idict as ZstdDictionaryInterface = dict
-		    cdict = idict.GetCDict
-		    ddict = idict.GetDDict
-		  end if
+		  var idict as ZstdDictionaryInterface = dict
+		  cdict = idict.GetCDict
+		  ddict = idict.GetDDict
 		  
 		  declare function ZSTD_CCtx_refCDict lib kLibZstd ( cctx as Ptr, cdict as ptr ) as UInteger
 		  
@@ -51,7 +54,8 @@ Private Class ZstdBase
 		  code = ZSTD_DCtx_refDDict( DecompressContext, ddict )
 		  ZstdMaybeRaiseException code
 		  
-		  HasDictionary = true
+		  self.Dictionary = dict
+		  
 		  
 		End Sub
 	#tag EndMethod
@@ -78,7 +82,7 @@ Private Class ZstdBase
 	#tag EndProperty
 
 	#tag Property, Flags = &h1
-		Protected HasDictionary As Boolean
+		Protected Dictionary As ZstdDictionary_MTC
 	#tag EndProperty
 
 	#tag ComputedProperty, Flags = &h0
