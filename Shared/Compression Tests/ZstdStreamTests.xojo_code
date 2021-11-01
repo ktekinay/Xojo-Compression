@@ -239,6 +239,15 @@ Inherits TestGroup
 		  
 		  var sourceFolder as FolderItem = SpecialFolder.Resource( "zstd_dict_test_files" )
 		  
+		  var sources() as string
+		  for each f as FolderItem in sourceFolder.Children
+		    if f.Name.EndsWith( ".json" )  then
+		      bs = BinaryStream.Open( f ) 
+		      sources.Add bs.Read( bs.Length )
+		      bs.Close
+		    end if
+		  next
+		  
 		  //
 		  // Test without dictionary
 		  //
@@ -251,16 +260,10 @@ Inherits TestGroup
 		  
 		  StartTestTimer kLogKeyNoDict
 		  
-		  for each f as FolderItem in sourceFolder.Children
-		    if f.Name.EndsWith( ".json" ) then
-		      bs = BinaryStream.Open( f )
-		      var contents as string = bs.Read( bs.Length )
-		      bs.Close
-		      
-		      uncompressedSize = uncompressedSize + contents.Bytes
-		      compressor.Write( contents )
-		      compressor.Flush
-		    end if
+		  for each contents as string in sources
+		    uncompressedSize = uncompressedSize + contents.Bytes
+		    compressor.Write( contents )
+		    compressor.Flush
 		  next
 		  
 		  LogTestTimer kLogKeyNoDict
@@ -296,15 +299,9 @@ Inherits TestGroup
 		  
 		  StartTestTimer kLogKeyWithDict
 		  
-		  for each f as FolderItem in sourceFolder.Children
-		    if f.Name.EndsWith( ".json" ) then
-		      bs = BinaryStream.Open( f )
-		      var contents as string = bs.Read( bs.Length )
-		      bs.Close
-		      
-		      compressor.Write( contents )
-		      compressor.Flush
-		    end if
+		  for each contents as string in sources
+		    compressor.Write( contents )
+		    compressor.Flush
 		  next
 		  
 		  withDictSize = compressor.BytesAvailable
@@ -333,7 +330,7 @@ Inherits TestGroup
 		  decompressor.Flush
 		  
 		  var decompressed as string = decompressor.ReadAll
-		  'Assert.AreEqual "ABC123", decompressed
+		  Assert.AreSame String.FromArray( sources, "" ), decompressed
 		  
 		End Sub
 	#tag EndMethod
