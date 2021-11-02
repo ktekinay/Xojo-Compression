@@ -3,10 +3,12 @@ Class SimpleZlib_MTC
 Inherits M_Compression.Zlib_MTC
 Implements M_Compression.Compressor_MTC
 	#tag Method, Flags = &h0
-		Function Compress(src As MemoryBlock, compressionLevel As Integer = kLevelDefault) As String
+		Function Compress(src As MemoryBlock) As String
 		  //
 		  // Adds a header to the data
 		  //
+		  var compressionLevel as integer = self.DefaultLevel
+		  
 		  var destSize as UInteger = super.CompressBound( src.Size )
 		  var dest as new MemoryBlock( destSize + kHeaderBytes )
 		  super.CompressToMemoryBlock( src, dest, destSize, kHeaderBytes, compressionLevel )

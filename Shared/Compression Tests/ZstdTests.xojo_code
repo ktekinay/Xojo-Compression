@@ -1,36 +1,16 @@
 #tag Class
 Protected Class ZstdTests
 Inherits CompressionTestGroup
-	#tag Event , Description = 436F6D70726573732074686520676976656E20646174612061742074686520676976656E206C6576656C2E
-		Function CompressData(data As String, level As Integer, tag As Variant) As String
-		  #pragma unused tag
-		  
-		  return Compressor.Compress( data, level )
-		  
-		End Function
-	#tag EndEvent
-
-	#tag Event , Description = 4465636F6D70726573732074686520676976656E20646174612E
-		Function DecompressData(data As String, originalSize As Integer, encoding As TextEncoding, tag As Variant) As String
-		  #pragma unused originalSize
-		  #pragma unused tag
-		  
-		  return Compressor.Decompress( data, encoding )
-		End Function
-	#tag EndEvent
-
 	#tag Event
-		Function GetCompressor() As Compressor_MTC
-		  return new Zstd_MTC
+		Function GetCompressor(compressionLevel As Integer) As Compressor_MTC
+		  if compressionLevel = kLevelDefault then
+		    compressionLevel = Zstd_MTC.LevelDefault
+		  end if
+		  
+		  return new Zstd_MTC( compressionLevel )
+		  
 		  
 		End Function
-	#tag EndEvent
-
-	#tag Event
-		Sub Setup()
-		  CompressTestLevel = Zstd_MTC.LevelDefault
-		  
-		End Sub
 	#tag EndEvent
 
 
@@ -150,11 +130,12 @@ Inherits CompressionTestGroup
 		  Assert.Message "Compression Level = " + level.ToString
 		  Assert.Message "Cores = " + kCores.ToString
 		  
-		  Zstd_MTC( Compressor ).Cores = kCores
+		  var compressor as Zstd_MTC = Zstd_MTC( Compressor( level ) )
+		  compressor.Cores = kCores
 		  
 		  var compressed as string 
 		  for i as integer = 1 to 2
-		    compressed = Compress( s, level )
+		    compressed = Compress( compressor, s )
 		  next i
 		  Assert.Message "compressed.Bytes = " + compressed.Bytes.ToString( kFormat )
 		  var ratio as double = 100.0 - ( ( compressed.Bytes / s.Bytes ) * 100.0 )
@@ -162,7 +143,7 @@ Inherits CompressionTestGroup
 		  
 		  var decompressed as string
 		  for i as integer = 1 to 2
-		    decompressed = Decompress( compressed, s.Bytes, s.Encoding )
+		    decompressed = Decompress( compressor, compressed, s.Encoding )
 		  next i
 		  
 		  Assert.AreSame s, decompressed

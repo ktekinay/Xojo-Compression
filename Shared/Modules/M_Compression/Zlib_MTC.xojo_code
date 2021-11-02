@@ -114,8 +114,8 @@ Class Zlib_MTC
 	#tag EndMethod
 
 
-	#tag Property, Flags = &h21
-		Private DefaultLevel As Integer
+	#tag Property, Flags = &h1
+		Protected DefaultLevel As Integer
 	#tag EndProperty
 
 	#tag ComputedProperty, Flags = &h0

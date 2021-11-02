@@ -1,39 +1,15 @@
 #tag Class
 Protected Class SimpleZlibTests
 Inherits CompressionTestGroup
-	#tag Event , Description = 436F6D70726573732074686520676976656E20646174612061742074686520676976656E206C6576656C2E
-		Function CompressData(data As String, level As Integer, tag As Variant) As String
-		  #pragma unused tag
-		  
-		  return Compressor.Compress( data, level )
-		  
-		End Function
-	#tag EndEvent
-
-	#tag Event , Description = 4465636F6D70726573732074686520676976656E20646174612E
-		Function DecompressData(data As String, originalSize As Integer, encoding As TextEncoding, tag As Variant) As String
-		  #pragma unused originalSize
-		  #pragma unused tag
-		  
-		  var uncompressed as string = Compressor.Decompress( data, encoding )
-		  
-		  return uncompressed
-		  
-		End Function
-	#tag EndEvent
-
 	#tag Event
-		Function GetCompressor() As Compressor_MTC
-		  return new SimpleZlib_MTC
+		Function GetCompressor(compressionLevel As Integer) As Compressor_MTC
+		  if compressionLevel = kLevelDefault then
+		    compressionLevel = SimpleZlib_MTC.LevelDefault
+		  end if
+		  
+		  return new SimpleZlib_MTC( compressionLevel )
 		  
 		End Function
-	#tag EndEvent
-
-	#tag Event
-		Sub Setup()
-		  CompressTestLevel = SimpleZlib_MTC.LevelDefault
-		  
-		End Sub
 	#tag EndEvent
 
 

@@ -1,7 +1,7 @@
 #tag Interface
 Interface Compressor_MTC
 	#tag Method, Flags = &h0
-		Function Compress(src As MemoryBlock, Optional compressionLevel As Integer) As String
+		Function Compress(src As MemoryBlock) As String
 		  
 		End Function
 	#tag EndMethod
