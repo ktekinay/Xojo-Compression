@@ -21,7 +21,7 @@ Private Class ZstdBase
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Constructor(dict As ZstdDictionary_MTC)
+		Sub Constructor(zstdDictionary As ZstdDictionary_MTC)
 		  Constructor kLevelDefault
 		  
 		  //
@@ -42,7 +42,7 @@ Private Class ZstdBase
 		  var cdict as ptr
 		  var ddict as ptr
 		  
-		  var idict as ZstdDictionaryInterface = dict
+		  var idict as ZstdDictionaryInterface = zstdDictionary
 		  cdict = idict.GetCDict
 		  ddict = idict.GetDDict
 		  
@@ -56,8 +56,7 @@ Private Class ZstdBase
 		  code = ZSTD_DCtx_refDDict( DecompressContext, ddict )
 		  ZstdMaybeRaiseException code
 		  
-		  self.Dictionary = dict
-		  
+		  self.Dictionary = zstdDictionary
 		  
 		End Sub
 	#tag EndMethod
