@@ -2,8 +2,17 @@
 Class Zstd_MTC
 Inherits ZstdBase
 Implements M_Compression.Compressor_MTC
+	#tag Event
+		Sub DoConstruction()
+		  //
+		  // Placeholder to hide this from the outside
+		  //
+		End Sub
+	#tag EndEvent
+
+
 	#tag Method, Flags = &h0
-		Function Compress(src As MemoryBlock, compressionLevel As Integer = kLevelDefault) As String
+		Function Compress(src As MemoryBlock) As String
 		  #if TargetMacOS then
 		    #if TargetARM then
 		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
@@ -15,9 +24,7 @@ Implements M_Compression.Compressor_MTC
 		  var destSize as integer = CompressBound( src )
 		  var dest as new MemoryBlock( destSize )
 		  
-		  if compressionLevel = kLevelDefault then
-		    compressionLevel = DefaultLevel
-		  end if
+		  var compressionLevel as integer = DefaultLevel
 		  
 		  MySemaphore.Signal
 		  try

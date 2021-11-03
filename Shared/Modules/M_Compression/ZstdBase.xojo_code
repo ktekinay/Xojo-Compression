@@ -15,8 +15,56 @@ Private Class ZstdBase
 		  
 		  Cores = DefaultCores
 		  
+		  RaiseEvent DoConstruction
+		  
 		End Sub
 	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub Constructor(zstdDictionary As ZstdDictionary_MTC)
+		  Constructor kLevelDefault
+		  
+		  //
+		  // If dict is nil then we
+		  // want the NilObjectException
+		  //
+		  
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
+		  #endif
+		  
+		  var code as UInteger
+		  
+		  var cdict as ptr
+		  var ddict as ptr
+		  
+		  var idict as ZstdDictionaryInterface = zstdDictionary
+		  cdict = idict.GetCDict
+		  ddict = idict.GetDDict
+		  
+		  declare function ZSTD_CCtx_refCDict lib kLibZstd ( cctx as Ptr, cdict as ptr ) as UInteger
+		  
+		  code = ZSTD_CCtx_refCDict( CompressContext, cdict )
+		  ZstdMaybeRaiseException code
+		  
+		  declare function ZSTD_DCtx_refDDict lib kLibZstd ( dctx as Ptr, ddict as ptr ) as UInteger
+		  
+		  code = ZSTD_DCtx_refDDict( DecompressContext, ddict )
+		  ZstdMaybeRaiseException code
+		  
+		  self.Dictionary = zstdDictionary
+		  
+		End Sub
+	#tag EndMethod
+
+
+	#tag Hook, Flags = &h0
+		Event DoConstruction()
+	#tag EndHook
 
 
 	#tag Property, Flags = &h1
@@ -37,6 +85,10 @@ Private Class ZstdBase
 
 	#tag Property, Flags = &h1
 		Protected DefaultLevel As Integer
+	#tag EndProperty
+
+	#tag Property, Flags = &h1
+		Protected Dictionary As ZstdDictionary_MTC
 	#tag EndProperty
 
 	#tag ComputedProperty, Flags = &h0
@@ -196,6 +248,14 @@ Private Class ZstdBase
 			Visible=true
 			Group="Position"
 			InitialValue="0"
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Cores"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
 			Type="Integer"
 			EditorType=""
 		#tag EndViewProperty

@@ -1,38 +1,105 @@
 #tag Class
 Protected Class ZstdTests
 Inherits CompressionTestGroup
-	#tag Event , Description = 436F6D70726573732074686520676976656E20646174612061742074686520676976656E206C6576656C2E
-		Function CompressData(data As String, level As Integer, tag As Variant) As String
-		  #pragma unused tag
-		  
-		  return Compressor.Compress( data, level )
-		  
-		End Function
-	#tag EndEvent
-
-	#tag Event , Description = 4465636F6D70726573732074686520676976656E20646174612E
-		Function DecompressData(data As String, originalSize As Integer, encoding As TextEncoding, tag As Variant) As String
-		  #pragma unused originalSize
-		  #pragma unused tag
-		  
-		  return Compressor.Decompress( data, encoding )
-		End Function
-	#tag EndEvent
-
 	#tag Event
-		Function GetCompressor() As Compressor_MTC
-		  return new Zstd_MTC
+		Function GetCompressor(compressionLevel As Integer) As Compressor_MTC
+		  if compressionLevel = kLevelDefault then
+		    compressionLevel = Zstd_MTC.LevelDefault
+		  end if
+		  
+		  return new Zstd_MTC( compressionLevel )
+		  
 		  
 		End Function
 	#tag EndEvent
 
-	#tag Event
-		Sub Setup()
-		  CompressTestLevel = Zstd_MTC.LevelDefault
+
+	#tag Method, Flags = &h0
+		Sub DictionaryTest()
+		  var compressionLevel as integer = Zstd_MTC.LevelFast
+		  
+		  var compressor as Zstd_MTC
+		  var bs as BinaryStream
+		  
+		  var sourceFolder as FolderItem = SpecialFolder.Resource( "zstd_dict_test_files" )
+		  
+		  //
+		  // Test without dictionary
+		  //
+		  compressor = new Zstd_MTC( compressionLevel )
+		  
+		  var uncompressedSize as integer
+		  var noDictSize as integer
+		  
+		  const kLogKeyNoDict as string = "Compression without Dictionary"
+		  
+		  StartTestTimer kLogKeyNoDict
+		  
+		  for each f as FolderItem in sourceFolder.Children
+		    if f.Name.EndsWith( ".json" ) then
+		      bs = BinaryStream.Open( f )
+		      var contents as string = bs.Read( bs.Length )
+		      bs.Close
+		      
+		      uncompressedSize = uncompressedSize + contents.Bytes
+		      var s as string = compressor.Compress( contents )
+		      noDictSize = noDictSize + s.Bytes
+		    end if
+		  next
+		  
+		  LogTestTimer kLogKeyNoDict
+		  
+		  Assert.Message "Uncompressed size: " + uncompressedSize.ToString( "#,##0" )
+		  Assert.Message "Compressed size without Dictionary: " + noDictSize.ToString( "#,##0" )
+		  
+		  var dictBuffer as string
+		  if true then
+		    var f as FolderItem = SpecialFolder.Resource( "zstd_dictionary" )
+		    bs = BinaryStream.Open( f )
+		    dictBuffer = bs.Read( bs.Length )
+		    bs.Close
+		  end if
+		  
+		  const kLogKeyCreateDict as string = "Create Dictionary"
+		  
+		  StartTestTimer kLogKeyCreateDict
+		  var zd as new ZstdDictionary_MTC( dictBuffer, compressionLevel )
+		  LogTestTimer kLogKeyCreateDict
+		  
+		  //
+		  // Now with a dictionary
+		  //
+		  compressor = new Zstd_MTC( zd )
+		  
+		  var withDictSize as integer
+		  
+		  const kLogKeyWithDict as string = "Compression with Dictionary"
+		  
+		  StartTestTimer kLogKeyWithDict
+		  
+		  for each f as FolderItem in sourceFolder.Children
+		    if f.Name.EndsWith( ".json" ) then
+		      bs = BinaryStream.Open( f )
+		      var contents as string = bs.Read( bs.Length )
+		      bs.Close
+		      
+		      var s as string = compressor.Compress( contents )
+		      withDictSize = withDictSize + s.Bytes
+		    end if
+		  next
+		  
+		  LogTestTimer kLogKeyWithDict
+		  
+		  Assert.Message "Compressed size with Dictionary: " + withDictSize.ToString( "#,##0" )
+		  
+		  Assert.IsTrue withDictSize < noDictSize
+		  
+		  var compressed as string = compressor.Compress( "ABC123" )
+		  var decompressed as string = compressor.Decompress( compressed )
+		  Assert.AreEqual "ABC123", decompressed
 		  
 		End Sub
-	#tag EndEvent
-
+	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Sub ErrorTest()
@@ -63,11 +130,12 @@ Inherits CompressionTestGroup
 		  Assert.Message "Compression Level = " + level.ToString
 		  Assert.Message "Cores = " + kCores.ToString
 		  
-		  Zstd_MTC( Compressor ).Cores = kCores
+		  var compressor as Zstd_MTC = Zstd_MTC( Compressor( level ) )
+		  compressor.Cores = kCores
 		  
 		  var compressed as string 
 		  for i as integer = 1 to 2
-		    compressed = Compress( s, level )
+		    compressed = Compress( compressor, s )
 		  next i
 		  Assert.Message "compressed.Bytes = " + compressed.Bytes.ToString( kFormat )
 		  var ratio as double = 100.0 - ( ( compressed.Bytes / s.Bytes ) * 100.0 )
@@ -75,7 +143,7 @@ Inherits CompressionTestGroup
 		  
 		  var decompressed as string
 		  for i as integer = 1 to 2
-		    decompressed = Decompress( compressed, s.Bytes, s.Encoding )
+		    decompressed = Decompress( compressor, compressed, s.Encoding )
 		  next i
 		  
 		  Assert.AreSame s, decompressed

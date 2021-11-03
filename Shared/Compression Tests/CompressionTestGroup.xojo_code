@@ -1,20 +1,10 @@
 #tag Class
 Protected Class CompressionTestGroup
 Inherits TestGroup
-	#tag Event
-		Sub Setup()
-		  self.Compressor = GetCompressor
-		  
-		  RaiseEvent Setup
-		  
-		End Sub
-	#tag EndEvent
-
-
 	#tag Method, Flags = &h1
-		Protected Function Compress(data As String, level As Integer, tag As Variant = Nil) As String
+		Protected Function Compress(withCompressor As Compressor_MTC, data As String) As String
 		  StartTestTimer "compress"
-		  var compressed as string = RaiseEvent CompressData( data, level, tag )
+		  var compressed as string = withCompressor.Compress( data )
 		  LogTestTimer "compress"
 		  
 		  return compressed
@@ -24,7 +14,7 @@ Inherits TestGroup
 
 	#tag Method, Flags = &h0
 		Sub CompressDefaultTest()
-		  DoCompress CompressTestLevel
+		  DoCompress kLevelDefault
 		  
 		End Sub
 	#tag EndMethod
@@ -36,15 +26,25 @@ Inherits TestGroup
 		End Sub
 	#tag EndMethod
 
+	#tag Method, Flags = &h1
+		Protected Function Compressor(compressionLevel As Integer = -999999) As Compressor_MTC
+		  var c as Compressor_MTC = RaiseEvent GetCompressor( compressionLevel )
+		  return c
+		  
+		End Function
+	#tag EndMethod
+
 	#tag Method, Flags = &h0
 		Sub CompressTinyTest()
 		  var s as string = "a"
 		  Assert.Message "s = " + s
 		  
-		  var compressed as string = Compress( s, 1 )
+		  var compressor as Compressor_MTC = self.Compressor( 1 )
+		  
+		  var compressed as string = Compress( compressor, s )
 		  Assert.Message "compressed.Bytes = " + compressed.Bytes.ToString
 		  
-		  var decompressed as string = Decompress( compressed, s.Bytes, Encodings.UTF8 )
+		  var decompressed as string = Decompress( compressor, compressed, Encodings.UTF8 )
 		  
 		  Assert.AreSame s, decompressed
 		End Sub
@@ -56,7 +56,7 @@ Inherits TestGroup
 		  
 		  #pragma BreakOnExceptions false
 		  try
-		    call Decompress( s, 5 )
+		    call Decompress( Compressor, s )
 		    Assert.Fail "Should have generated exception"
 		  catch err as CompressionException_MTC
 		    Assert.Pass
@@ -67,9 +67,9 @@ Inherits TestGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h1
-		Protected Function Decompress(data As String, originalSize As Integer, encoding As TextEncoding = Nil, tag As Variant = Nil) As String
+		Protected Function Decompress(withCompressor As Compressor_MTC, data As String, encoding As TextEncoding = Nil) As String
 		  StartTestTimer "decompressed"
-		  var decompressed as string = RaiseEvent DecompressData( data, originalSize, encoding, tag )
+		  var decompressed as string = withCompressor.Decompress( data, encoding )
 		  LogTestTimer "decompressed"
 		  
 		  return decompressed
@@ -84,12 +84,14 @@ Inherits TestGroup
 		  var s as string = BigData
 		  var sBytes as integer = s.Bytes
 		  
+		  var compressor as Compressor_MTC = Compressor( level )
+		  
 		  Assert.Message "s.Bytes = " + sBytes.ToString( kFormat )
-		  Assert.Message "Compression Level = " + level.ToString
+		  Assert.Message "Compression Level = " + if( level = kLevelDefault, "default", level.ToString )
 		  
 		  var compressed as string 
 		  for i as integer = 1 to 2
-		    compressed = Compress( s, level )
+		    compressed = Compress( compressor, s )
 		  next i
 		  Assert.Message "compressed.Bytes = " + compressed.Bytes.ToString( kFormat )
 		  var ratio as double = 100.0 - ( ( compressed.Bytes / s.Bytes ) * 100.0 )
@@ -97,7 +99,7 @@ Inherits TestGroup
 		  
 		  var decompressed as string
 		  for i as integer = 1 to 2
-		    decompressed = Decompress( compressed, s.Bytes, s.Encoding )
+		    decompressed = Decompress( compressor, compressed, s.Encoding )
 		  next i
 		  
 		  Assert.AreSame s, decompressed
@@ -106,20 +108,8 @@ Inherits TestGroup
 	#tag EndMethod
 
 
-	#tag Hook, Flags = &h0, Description = 436F6D70726573732074686520676976656E20646174612061742074686520676976656E206C6576656C2E
-		Event CompressData(data As String, level As Integer, tag As Variant) As String
-	#tag EndHook
-
-	#tag Hook, Flags = &h0, Description = 4465636F6D70726573732074686520676976656E20646174612E
-		Event DecompressData(data As String, originalSize As Integer, encoding As TextEncoding, tag As Variant) As String
-	#tag EndHook
-
 	#tag Hook, Flags = &h0
-		Event GetCompressor() As Compressor_MTC
-	#tag EndHook
-
-	#tag Hook, Flags = &h0
-		Event Setup()
+		Event GetCompressor(compressionLevel As Integer) As Compressor_MTC
 	#tag EndHook
 
 
@@ -143,17 +133,13 @@ Inherits TestGroup
 		Shared BigData As String
 	#tag EndComputedProperty
 
-	#tag Property, Flags = &h1
-		Protected Compressor As Compressor_MTC
-	#tag EndProperty
-
-	#tag Property, Flags = &h1
-		Protected CompressTestLevel As Integer
-	#tag EndProperty
-
 	#tag Property, Flags = &h21
 		Attributes( Hidden ) Private Shared mBigData As String
 	#tag EndProperty
+
+
+	#tag Constant, Name = kLevelDefault, Type = Double, Dynamic = False, Default = \"-999999", Scope = Protected
+	#tag EndConstant
 
 
 	#tag ViewBehavior
