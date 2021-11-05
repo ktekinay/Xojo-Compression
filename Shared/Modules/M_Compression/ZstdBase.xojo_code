@@ -132,7 +132,8 @@ Private Class ZstdBase
 			  #endif
 			  
 			  declare function ZSTD_maxCLevel lib kLibZstd () as Int32
-			  return ZSTD_maxCLevel
+			  var value as Int32 = ZSTD_maxCLevel
+			  return value
 			  
 			End Get
 		#tag EndGetter
@@ -151,7 +152,23 @@ Private Class ZstdBase
 			  #endif
 			  
 			  declare function ZSTD_minCLevel lib kLibZstd () as Int32
-			  return ZSTD_minCLevel
+			  var value as Int32 = ZSTD_minCLevel
+			  
+			  //**********************************************************/
+			  //*                                                        */
+			  //*     In the Zstd lib v.1.5, there seems to be a bug     */
+			  //*   where the byte order of the Int32 is munged, so we   */
+			  //*         will try to anticipate and fix it here         */
+			  //*                                                        */
+			  //**********************************************************/
+			  
+			  if value < -100 then
+			    var uval as UInt32 = value
+			    uval = ( uval \ CType( 2 ^ 16, UInt32 ) )
+			    value = CType( uval, Int16 )
+			  end if
+			  
+			  return value
 			  
 			End Get
 		#tag EndGetter
