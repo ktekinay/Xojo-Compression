@@ -118,6 +118,13 @@ Inherits CompressionTestGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub MaxCoresTest()
+		  var maxCores as integer = Zstd_MTC.CoresMax
+		  Assert.Pass "Max Cores = " + maxCores.ToString
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub MultipleCoreTest()
 		  const kFormat as string = "#,##0"
 		  const kCores as integer = 4

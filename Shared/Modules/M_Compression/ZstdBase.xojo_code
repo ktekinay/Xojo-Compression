@@ -61,6 +61,20 @@ Private Class ZstdBase
 		End Sub
 	#tag EndMethod
 
+	#tag Method, Flags = &h21
+		Private Shared Sub ValidateCoresValue(value As Integer)
+		  if value <> 0 then
+		    var bounds as Pair = CCTX.GetBounds( CCTX.kParamNbWorkers )
+		    var lowerBound as integer = bounds.Left.IntegerValue
+		    var upperBound as integer = bounds.Right.IntegerValue
+		    
+		    if value < lowerBound or value > upperBound then
+		      RaiseException "Invalid value for Cores, must be between " + lowerBound.ToString + " and " + upperBound.ToString
+		    end if
+		  end if
+		End Sub
+	#tag EndMethod
+
 
 	#tag Hook, Flags = &h0
 		Event DoConstruction()
@@ -71,17 +85,51 @@ Private Class ZstdBase
 		Protected CompressContext As CCTX
 	#tag EndProperty
 
-	#tag Property, Flags = &h0, Description = 546865206E756D626572206F6620636F72657320746F2075736520666F7220636F6D7072657373696F6E2E
+	#tag ComputedProperty, Flags = &h0
+		#tag Getter
+			Get
+			  Return mCores
+			End Get
+		#tag EndGetter
+		#tag Setter
+			Set
+			  ValidateCoresValue value
+			  mCores = value
+			  
+			End Set
+		#tag EndSetter
 		Cores As Integer
-	#tag EndProperty
+	#tag EndComputedProperty
+
+	#tag ComputedProperty, Flags = &h0
+		#tag Getter
+			Get
+			  var result as Pair = CCTX.GetBounds( CCTX.kParamNbWorkers )
+			  return result.Right.IntegerValue
+			  
+			End Get
+		#tag EndGetter
+		Shared CoresMax As Integer
+	#tag EndComputedProperty
 
 	#tag Property, Flags = &h1
 		Protected DecompressContext As DCTX
 	#tag EndProperty
 
-	#tag Property, Flags = &h0, Description = 466F7220636F6D7072657373696F6E2C20746865206E756D626572206F6620636F72657320746F207573652062792064656661756C742E
-		Shared DefaultCores As Integer = 0
-	#tag EndProperty
+	#tag ComputedProperty, Flags = &h0
+		#tag Getter
+			Get
+			  Return mDefaultCores
+			End Get
+		#tag EndGetter
+		#tag Setter
+			Set
+			  ValidateCoresValue value
+			  mDefaultCores = value
+			End Set
+		#tag EndSetter
+		Shared DefaultCores As Integer
+	#tag EndComputedProperty
 
 	#tag Property, Flags = &h1
 		Protected DefaultLevel As Integer
@@ -174,6 +222,14 @@ Private Class ZstdBase
 		#tag EndGetter
 		Shared LevelMin As Integer
 	#tag EndComputedProperty
+
+	#tag Property, Flags = &h21, Description = 546865206E756D626572206F6620636F72657320746F2075736520666F7220636F6D7072657373696F6E2E
+		Attributes( Hidden ) Private mCores As Integer
+	#tag EndProperty
+
+	#tag Property, Flags = &h21, Description = 466F7220636F6D7072657373696F6E2C20746865206E756D626572206F6620636F72657320746F207573652062792064656661756C742E
+		Attributes( Hidden ) Private Shared mDefaultCores As Integer = 0
+	#tag EndProperty
 
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
@@ -269,7 +325,7 @@ Private Class ZstdBase
 			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="Cores"
+			Name="mCores"
 			Visible=false
 			Group="Behavior"
 			InitialValue=""
