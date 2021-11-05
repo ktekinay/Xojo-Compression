@@ -41,6 +41,13 @@ Private Class ZstdStructure
 	#tag EndProperty
 
 
+	#tag Structure, Name = ZstdBounds, Flags = &h0, Attributes = \""
+		Error As UInteger
+		  LowerBound As Int32
+		UpperBound As Int32
+	#tag EndStructure
+
+
 	#tag ViewBehavior
 		#tag ViewProperty
 			Name="Name"

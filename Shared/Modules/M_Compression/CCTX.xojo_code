@@ -35,6 +35,33 @@ Inherits ZstdStructure
 
 
 	#tag Method, Flags = &h0
+		Shared Function GetBounds(param As Integer) As Pair
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
+		  #endif
+		  
+		  var result as ZstdBounds
+		  
+		  declare function ZSTD_cParam_getBounds lib kLibZstd ( param As UInt32 ) As ZstdBounds
+		  result = ZSTD_cParam_getBounds( param )
+		  
+		  #if DebugBuild then
+		    var mb as MemoryBlock = result.StringValue( TargetLittleEndian )
+		    mb = mb
+		  #endif
+		  
+		  ZstdMaybeRaiseException result.Error
+		  
+		  return result.LowerBound : result.UpperBound
+		  
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub ResetSession()
 		  #if TargetMacOS then
 		    #if TargetARM then
@@ -89,6 +116,9 @@ Inherits ZstdStructure
 		End Sub
 	#tag EndMethod
 
+
+	#tag Constant, Name = kParamCCompressionLevel, Type = Double, Dynamic = False, Default = \"100", Scope = Public
+	#tag EndConstant
 
 	#tag Constant, Name = kParamChainLog, Type = Double, Dynamic = False, Default = \"103", Scope = Public, Description = 53697A65206F6620746865206D756C74692D70726F626520736561726368207461626C652C206173206120706F776572206F6620322E
 	#tag EndConstant

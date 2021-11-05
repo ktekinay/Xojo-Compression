@@ -35,6 +35,27 @@ Inherits ZstdStructure
 
 
 	#tag Method, Flags = &h0
+		Shared Function GetBounds(param As Integer) As Pair
+		  #if TargetMacOS then
+		    #if TargetARM then
+		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
+		    #elseif TargetX86 then
+		      const kLibZstd as string = "Intel/" + M_Compression.kLibZstd
+		    #endif
+		  #endif
+		  
+		  var result as ZstdBounds
+		  
+		  declare function ZSTD_dParam_getBounds lib kLibZstd ( param As UInt32 ) As ZstdBounds
+		  result = ZSTD_dParam_getBounds( param )
+		  ZstdMaybeRaiseException result.Error
+		  
+		  return result.LowerBound : result.UpperBound
+		  
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub ResetSession()
 		  #if TargetMacOS then
 		    #if TargetARM then
