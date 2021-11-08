@@ -13,6 +13,31 @@ Inherits TestGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub CompressCompressedTest()
+		  var f as FolderItem = SpecialFolder.Resource( "json_test.txt.zst" )
+		  
+		  var bs as BinaryStream = BinaryStream.Open( f )
+		  var fileLength as integer = bs.Length
+		  var contents as string = bs.Read( fileLength )
+		  bs.Close
+		  
+		  var compressor as Compressor_MTC = Compressor( 1 )
+		  
+		  StartTestTimer "compress"
+		  var compressed as string = compressor.Compress( contents )
+		  LogTestTimer "compress"
+		  
+		  StartTestTimer "decompress"
+		  var decompressed as string = compressor.Decompress( compressed )
+		  LogTestTimer "decompress"
+		  
+		  Assert.AreSame contents, decompressed
+		  Assert.Message "Original size = " + contents.Bytes.ToString( "#,##0" ) + " bytes"
+		  Assert.Message "Compressed size = " + compressed.Bytes.ToString( "#,##0" ) + " bytes"
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub CompressDefaultTest()
 		  DoCompress kLevelDefault
 		  

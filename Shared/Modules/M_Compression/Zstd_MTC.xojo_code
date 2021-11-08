@@ -24,13 +24,13 @@ Implements M_Compression.Compressor_MTC
 		  var destSize as integer = CompressBound( src )
 		  var dest as new MemoryBlock( destSize )
 		  
-		  var compressionLevel as integer = DefaultLevel
-		  
 		  MySemaphore.Signal
 		  try
-		    CompressContext.SetParameter( CCTX.kParamCompressionLevel, compressionLevel )
-		    CompressContext.SetParameter( CCTX.kParamNbWorkers, Cores )
-		    CompressContext.SetPledgedSourceSize( src.Size )
+		    var clamped as integer = CompressContext.SetParameter( CCTX.kParamNbWorkers, Cores )
+		    if clamped <> 0 then
+		      Cores = clamped // Clamped
+		    end if
+		    call CompressContext.SetPledgedSourceSize( src.Size )
 		    
 		  catch err as RuntimeException
 		    MySemaphore.Release

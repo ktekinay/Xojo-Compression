@@ -1,16 +1,20 @@
 #tag Class
 Private Class ZstdBase
 	#tag Method, Flags = &h1
-		Protected Sub Constructor(defaultLevel As Integer = kLevelDefault)
-		  if defaultLevel = kLevelDefault then
-		    self.DefaultLevel = LevelDefault
-		  elseif defaultLevel < LevelMin or defaultLevel > LevelMax then
-		    RaiseException "Compression Level must be between " + LevelMin.ToString + " and " + LevelMax.ToString
-		  else
-		    self.DefaultLevel = defaultLevel
+		Protected Sub Constructor(compressionLevel As Integer = kLevelDefault)
+		  if compressionLevel = kLevelDefault then
+		    compressionLevel = LevelDefault
 		  end if
 		  
 		  CompressContext = new CCTX
+		  var code as integer = CompressContext.SetParameter( CCTX.kParamCompressionLevel, compressionLevel )
+		  
+		  if code <> 0 then // It was clamped
+		    self.CompressionLevel = code
+		  else
+		    self.CompressionLevel = compressionLevel
+		  end if
+		  
 		  DecompressContext = new DCTX
 		  
 		  Cores = DefaultCores
@@ -85,6 +89,10 @@ Private Class ZstdBase
 		Protected CompressContext As CCTX
 	#tag EndProperty
 
+	#tag Property, Flags = &h1
+		Protected CompressionLevel As Integer
+	#tag EndProperty
+
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
@@ -130,10 +138,6 @@ Private Class ZstdBase
 		#tag EndSetter
 		Shared DefaultCores As Integer
 	#tag EndComputedProperty
-
-	#tag Property, Flags = &h1
-		Protected DefaultLevel As Integer
-	#tag EndProperty
 
 	#tag Property, Flags = &h1
 		Protected Dictionary As ZstdDictionary_MTC
@@ -204,17 +208,12 @@ Private Class ZstdBase
 			  
 			  //**********************************************************/
 			  //*                                                        */
-			  //*     In the Zstd lib v.1.5, there seems to be a bug     */
-			  //*   where the byte order of the Int32 is munged, so we   */
-			  //*         will try to anticipate and fix it here         */
+			  //*   In Zstd lib v.1.5, there appears to be a bug where   */
+			  //*    the byte order of the Int32 is incorrect and you    */
+			  //*   will be a really low value (&H01 << 17), but since   */
+			  //*   the library doesn't seem to care, we won't either    */
 			  //*                                                        */
 			  //**********************************************************/
-			  
-			  if value < -100 then
-			    var uval as UInt32 = value
-			    uval = ( uval \ CType( 2 ^ 16, UInt32 ) )
-			    value = CType( uval, Int16 )
-			  end if
 			  
 			  return value
 			  
@@ -325,7 +324,7 @@ Private Class ZstdBase
 			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="mCores"
+			Name="Cores"
 			Visible=false
 			Group="Behavior"
 			InitialValue=""

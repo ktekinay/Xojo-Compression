@@ -83,7 +83,7 @@ Inherits ZstdStructure
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub SetParameter(param As Integer, value As Integer)
+		Function SetParameter(param As Integer, value As Integer) As Integer
 		  #if TargetMacOS then
 		    #if TargetARM then
 		      const kLibZstd as string = "ARM/" + M_Compression.kLibZstd
@@ -96,7 +96,9 @@ Inherits ZstdStructure
 		  var code as UInteger = ZSTD_CCtx_setParameter( self, param, value )
 		  ZstdMaybeRaiseException( code )
 		  
-		End Sub
+		  return code
+		  
+		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0

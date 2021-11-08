@@ -3,7 +3,10 @@ Class ZstdStreamCompressor_MTC
 Inherits M_Compression.ZstdStream
 	#tag Event , Description = 41626F757420746F20777269746520746F20612073747265616D207468617420686173206265656E20496E697465642E
 		Sub BeforeFirstWrite()
-		  CompressContext.SetParameter( CCTX.kParamNbWorkers, Cores )
+		  var clamped as integer = CompressContext.SetParameter( CCTX.kParamNbWorkers, Cores )
+		  if clamped <> 0 then
+		    Cores = clamped
+		  end if
 		  
 		End Sub
 	#tag EndEvent
@@ -47,7 +50,7 @@ Inherits M_Compression.ZstdStream
 		    CompressContext.ResetSession
 		  else
 		    declare function ZSTD_initCStream lib kLibZstd ( zsc as ptr, compressionLevel as Int32 ) as UInteger
-		    var error as UInteger = ZSTD_initCStream( self.CompressContext, DefaultLevel )
+		    var error as UInteger = ZSTD_initCStream( self.CompressContext, CompressionLevel )
 		    ZstdMaybeRaiseException error 
 		  end if
 		  
