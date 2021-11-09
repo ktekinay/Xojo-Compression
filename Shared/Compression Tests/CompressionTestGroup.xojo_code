@@ -115,9 +115,15 @@ Inherits TestGroup
 		  Assert.Message "Compression Level = " + if( level = kLevelDefault, "default", level.ToString )
 		  
 		  var compressed as string 
+		  var compressedBytes as integer
+		  
 		  for i as integer = 1 to 2
 		    compressed = Compress( compressor, s )
+		    if compressedBytes = 0 then
+		      compressedBytes = compressed.Bytes
+		    end if
 		  next i
+		  Assert.AreEqual compressedBytes, compressed.Bytes, "Unequal compression on each pass"
 		  Assert.Message "compressed.Bytes = " + compressed.Bytes.ToString( kFormat )
 		  var ratio as double = 100.0 - ( ( compressed.Bytes / s.Bytes ) * 100.0 )
 		  Assert.Message "compression = " + ratio.ToString + "%"

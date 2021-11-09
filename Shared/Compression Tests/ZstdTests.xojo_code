@@ -118,43 +118,39 @@ Inherits CompressionTestGroup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub MaxCoresTest()
-		  var maxCores as integer = Zstd_MTC.CoresMax
-		  Assert.Pass "Max Cores = " + maxCores.ToString
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Sub MultipleCoreTest()
-		  const kFormat as string = "#,##0"
-		  const kCores as integer = 4
-		  
-		  var s as string = BigData
-		  var sBytes as integer = s.Bytes
-		  var level as integer = Zstd_MTC.LevelDefault
-		  
-		  Assert.Message "s.Bytes = " + sBytes.ToString( kFormat )
-		  Assert.Message "Compression Level = " + level.ToString
-		  Assert.Message "Cores = " + kCores.ToString
-		  
-		  var compressor as Zstd_MTC = Zstd_MTC( Compressor( level ) )
-		  compressor.Cores = kCores
-		  
-		  var compressed as string 
-		  for i as integer = 1 to 2
-		    compressed = Compress( compressor, s )
-		  next i
-		  Assert.Message "compressed.Bytes = " + compressed.Bytes.ToString( kFormat )
-		  var ratio as double = 100.0 - ( ( compressed.Bytes / s.Bytes ) * 100.0 )
-		  Assert.Message "compression = " + ratio.ToString + "%"
-		  
-		  var decompressed as string
-		  for i as integer = 1 to 2
-		    decompressed = Decompress( compressor, compressed, s.Encoding )
-		  next i
-		  
-		  Assert.AreSame s, decompressed
-		  
+		  #if not TargetWindows then
+		    
+		    const kFormat as string = "#,##0"
+		    const kCores as integer = 4
+		    
+		    var s as string = BigData
+		    var sBytes as integer = s.Bytes
+		    var level as integer = Zstd_MTC.LevelDefault
+		    
+		    Assert.Message "s.Bytes = " + sBytes.ToString( kFormat )
+		    Assert.Message "Compression Level = " + level.ToString
+		    Assert.Message "Cores = " + kCores.ToString
+		    
+		    var compressor as Zstd_MTC = Zstd_MTC( Compressor( level ) )
+		    compressor.Cores = kCores
+		    
+		    var compressed as string 
+		    for i as integer = 1 to 2
+		      compressed = Compress( compressor, s )
+		    next i
+		    Assert.Message "compressed.Bytes = " + compressed.Bytes.ToString( kFormat )
+		    var ratio as double = 100.0 - ( ( compressed.Bytes / s.Bytes ) * 100.0 )
+		    Assert.Message "compression = " + ratio.ToString + "%"
+		    
+		    var decompressed as string
+		    for i as integer = 1 to 2
+		      decompressed = Decompress( compressor, compressed, s.Encoding )
+		    next i
+		    
+		    Assert.AreSame s, decompressed
+		    
+		  #endif
 		End Sub
 	#tag EndMethod
 

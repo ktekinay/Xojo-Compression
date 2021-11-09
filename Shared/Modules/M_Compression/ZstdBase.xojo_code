@@ -65,7 +65,7 @@ Private Class ZstdBase
 		End Sub
 	#tag EndMethod
 
-	#tag Method, Flags = &h21
+	#tag Method, Flags = &h21, CompatibilityFlags = false
 		Private Shared Sub ValidateCoresValue(value As Integer)
 		  if value <> 0 then
 		    var bounds as Pair = CCTX.GetBounds( CCTX.kParamNbWorkers )
@@ -96,12 +96,24 @@ Private Class ZstdBase
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  Return mCores
+			  return mCores
 			End Get
 		#tag EndGetter
 		#tag Setter
 			Set
-			  ValidateCoresValue value
+			  if mCores = value then
+			    return
+			  end if
+			  
+			  #if TargetWindows then
+			    if value <> DefaultCores then
+			      //
+			      // DefaultCores can't be changed on Windows right now
+			      //
+			      RaiseException "Cores is not yet supported on Windows"
+			    end if
+			  #endif
+			  
 			  mCores = value
 			  
 			End Set
@@ -109,7 +121,7 @@ Private Class ZstdBase
 		Cores As Integer
 	#tag EndComputedProperty
 
-	#tag ComputedProperty, Flags = &h0
+	#tag ComputedProperty, Flags = &h0, CompatibilityFlags = false
 		#tag Getter
 			Get
 			  var result as Pair = CCTX.GetBounds( CCTX.kParamNbWorkers )
@@ -127,12 +139,15 @@ Private Class ZstdBase
 	#tag ComputedProperty, Flags = &h0
 		#tag Getter
 			Get
-			  Return mDefaultCores
+			  return mDefaultCores
 			End Get
 		#tag EndGetter
 		#tag Setter
 			Set
-			  ValidateCoresValue value
+			  #if TargetWindows then
+			    RaiseException "Cores is not yet supported on Windows"
+			  #endif
+			  
 			  mDefaultCores = value
 			End Set
 		#tag EndSetter

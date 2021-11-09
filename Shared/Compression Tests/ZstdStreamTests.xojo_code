@@ -41,39 +41,43 @@ Inherits TestGroup
 
 	#tag Method, Flags = &h0
 		Sub CompressCompressedMultiCoreTest()
-		  var f as FolderItem = SpecialFolder.Resource( "json_test.txt.zst" )
-		  
-		  var bs as BinaryStream = BinaryStream.Open( f )
-		  var fileLength as integer = bs.Length
-		  var contents as string = bs.Read( fileLength )
-		  bs.Close
-		  
-		  var compressor as new ZstdStreamCompressor_MTC
-		  compressor.Cores = 4
-		  
-		  StartTestTimer( "compress all" )
-		  
-		  StartTestTimer( "compress first chunk" )
-		  compressor.Write contents.LeftBytes( compressor.RecommendedChunkSize )
-		  compressor.Flush
-		  Assert.IsTrue compressor.BytesAvailable >= compressor.RecommendedChunkSize
-		  LogTestTimer( "compress first chunk" )
-		  
-		  compressor.Reset
-		  compressor.Write contents
-		  compressor.Flush
-		  LogTestTimer( "compress all" )
-		  
-		  var compressed as string = compressor.ReadAll
-		  var compressedBytes as integer = compressed.Bytes
-		  
-		  var decompressor as new ZstdStreamDecompressor_MTC
-		  decompressor.Write compressed
-		  decompressor.Flush
-		  var decompressed as string = decompressor.ReadAll
-		  
-		  Assert.IsTrue compressedBytes <= ( fileLength + 1024 ), "Not with 1K" // Within a KB
-		  Assert.AreSame contents, decompressed, "Contents do not match"
+		  #if not TargetWindows then
+		    
+		    var f as FolderItem = SpecialFolder.Resource( "json_test.txt.zst" )
+		    
+		    var bs as BinaryStream = BinaryStream.Open( f )
+		    var fileLength as integer = bs.Length
+		    var contents as string = bs.Read( fileLength )
+		    bs.Close
+		    
+		    var compressor as new ZstdStreamCompressor_MTC
+		    compressor.Cores = 4
+		    
+		    StartTestTimer( "compress all" )
+		    
+		    StartTestTimer( "compress first chunk" )
+		    compressor.Write contents.LeftBytes( compressor.RecommendedChunkSize )
+		    compressor.Flush
+		    Assert.IsTrue compressor.BytesAvailable >= compressor.RecommendedChunkSize
+		    LogTestTimer( "compress first chunk" )
+		    
+		    compressor.Reset
+		    compressor.Write contents
+		    compressor.Flush
+		    LogTestTimer( "compress all" )
+		    
+		    var compressed as string = compressor.ReadAll
+		    var compressedBytes as integer = compressed.Bytes
+		    
+		    var decompressor as new ZstdStreamDecompressor_MTC
+		    decompressor.Write compressed
+		    decompressor.Flush
+		    var decompressed as string = decompressor.ReadAll
+		    
+		    Assert.IsTrue compressedBytes <= ( fileLength + 1024 ), "Not with 1K" // Within a KB
+		    Assert.AreSame contents, decompressed, "Contents do not match"
+		    
+		  #endif
 		  
 		End Sub
 	#tag EndMethod
@@ -721,95 +725,99 @@ Inherits TestGroup
 
 	#tag Method, Flags = &h0
 		Sub StreamWithUnevenBlocksMultiCoreTest()
-		  var compressedByCLI as string
-		  
-		  if true then
-		    var bs as BinaryStream = BinaryStream.Open( SpecialFolder.Resource( "json_test_stream_level-1.zst" ) )
-		    compressedByCLI = bs.Read( bs.Length )
-		    bs.Close
-		  end if
-		  
-		  var compressor as new ZstdStreamCompressor_MTC( Zstd_MTC.LevelFast )
-		  compressor.Cores = 4
-		  var chunkSize as integer = compressor.RecommendedChunkSize + 1
-		  
-		  var s as string = CompressionTestGroup.BigData
-		  
-		  StartTestTimer "compressing"
-		  for pos as integer = 0 to s.Bytes - 1 step chunkSize
-		    compressor.Write s.MiddleBytes( pos, chunkSize )
-		  next
-		  compressor.Flush
-		  
-		  var compressed as string = compressor.ReadAll
-		  LogTestTimer "compressing"
-		  
-		  var decompressor as new ZstdStreamDecompressor_MTC
-		  chunkSize = decompressor.RecommendedChunkSize + 1
-		  try
-		    StartTestTimer "decompress native"
-		    for pos as integer = 0 to compressed.Bytes step chunkSize
-		      decompressor.Write compressed.MiddleBytes( pos, chunkSize )
-		    next
-		    decompressor.Flush
-		    LogTestTimer "decompress native"
-		    Assert.Pass "Decompressed"
+		  #if not TargetWindows then
 		    
-		  catch err as CompressionException_MTC
-		    if err isa EndException or err isa ThreadEndException then
-		      raise err
+		    var compressedByCLI as string
+		    
+		    if true then
+		      var bs as BinaryStream = BinaryStream.Open( SpecialFolder.Resource( "json_test_stream_level-1.zst" ) )
+		      compressedByCLI = bs.Read( bs.Length )
+		      bs.Close
 		    end if
-		    Assert.Fail err.Message
 		    
-		  end try
-		  
-		  var decompressed as string = decompressor.ReadAll( Encodings.UTF8 )
-		  Assert.AreEqual s.Bytes, decompressed.Bytes, "decompressed byte count doesn't match"
-		  if StrComp( decompressed, s, 0 ) <> 0 then
-		    Assert.Fail "decompressed bytes don't match"
-		    var m1 as MemoryBlock = s
-		    var m2 as MemoryBlock = decompressed
+		    var compressor as new ZstdStreamCompressor_MTC( Zstd_MTC.LevelFast )
+		    compressor.Cores = 4
+		    var chunkSize as integer = compressor.RecommendedChunkSize + 1
 		    
-		    var p1 as ptr = m1
-		    var p2 as ptr = m2
+		    var s as string = CompressionTestGroup.BigData
 		    
-		    var lastByte as integer = max( m1.Size, m2.Size ) - 1
-		    for b as integer = 0 to lastByte
-		      if b >= m1.Size or b >= m2.Size or p1.Byte( b ) <> p2.Byte( b ) then
-		        Assert.Message "Mismatch at byte " + b.ToString
-		        exit
+		    StartTestTimer "compressing"
+		    for pos as integer = 0 to s.Bytes - 1 step chunkSize
+		      compressor.Write s.MiddleBytes( pos, chunkSize )
+		    next
+		    compressor.Flush
+		    
+		    var compressed as string = compressor.ReadAll
+		    LogTestTimer "compressing"
+		    
+		    var decompressor as new ZstdStreamDecompressor_MTC
+		    chunkSize = decompressor.RecommendedChunkSize + 1
+		    try
+		      StartTestTimer "decompress native"
+		      for pos as integer = 0 to compressed.Bytes step chunkSize
+		        decompressor.Write compressed.MiddleBytes( pos, chunkSize )
+		      next
+		      decompressor.Flush
+		      LogTestTimer "decompress native"
+		      Assert.Pass "Decompressed"
+		      
+		    catch err as CompressionException_MTC
+		      if err isa EndException or err isa ThreadEndException then
+		        raise err
 		      end if
-		    next
-		  else
-		    Assert.Pass
-		  end if
-		  
-		  decompressor = new ZstdStreamDecompressor_MTC
-		  
-		  try
-		    StartTestTimer "decompress cli"
-		    for pos as integer = 0 to compressedByCLI.Bytes step chunkSize
-		      decompressor.Write compressedByCLI.MiddleBytes( pos, chunkSize )
-		    next
-		    decompressor.Flush
-		    LogTestTimer "decompress cli"
-		    Assert.Pass "Decompressed compressedByCLI"
+		      Assert.Fail err.Message
+		      
+		    end try
 		    
-		  catch err as CompressionException_MTC
-		    if err isa EndException or err isa ThreadEndException then
-		      raise err
+		    var decompressed as string = decompressor.ReadAll( Encodings.UTF8 )
+		    Assert.AreEqual s.Bytes, decompressed.Bytes, "decompressed byte count doesn't match"
+		    if StrComp( decompressed, s, 0 ) <> 0 then
+		      Assert.Fail "decompressed bytes don't match"
+		      var m1 as MemoryBlock = s
+		      var m2 as MemoryBlock = decompressed
+		      
+		      var p1 as ptr = m1
+		      var p2 as ptr = m2
+		      
+		      var lastByte as integer = max( m1.Size, m2.Size ) - 1
+		      for b as integer = 0 to lastByte
+		        if b >= m1.Size or b >= m2.Size or p1.Byte( b ) <> p2.Byte( b ) then
+		          Assert.Message "Mismatch at byte " + b.ToString
+		          exit
+		        end if
+		      next
+		    else
+		      Assert.Pass
 		    end if
-		    Assert.Fail err.Message
 		    
-		  end try
-		  
-		  decompressed = decompressor.ReadAll( Encodings.UTF8 )
-		  Assert.AreEqual s.Bytes, decompressed.Bytes, "decompressed cli byte count doesn't match"
-		  if StrComp( decompressed, s, 0 ) <> 0 then
-		    Assert.Fail "decompressed cli bytes don't match"
-		  else
-		    Assert.Pass
-		  end if
+		    decompressor = new ZstdStreamDecompressor_MTC
+		    
+		    try
+		      StartTestTimer "decompress cli"
+		      for pos as integer = 0 to compressedByCLI.Bytes step chunkSize
+		        decompressor.Write compressedByCLI.MiddleBytes( pos, chunkSize )
+		      next
+		      decompressor.Flush
+		      LogTestTimer "decompress cli"
+		      Assert.Pass "Decompressed compressedByCLI"
+		      
+		    catch err as CompressionException_MTC
+		      if err isa EndException or err isa ThreadEndException then
+		        raise err
+		      end if
+		      Assert.Fail err.Message
+		      
+		    end try
+		    
+		    decompressed = decompressor.ReadAll( Encodings.UTF8 )
+		    Assert.AreEqual s.Bytes, decompressed.Bytes, "decompressed cli byte count doesn't match"
+		    if StrComp( decompressed, s, 0 ) <> 0 then
+		      Assert.Fail "decompressed cli bytes don't match"
+		    else
+		      Assert.Pass
+		    end if
+		    
+		  #endif
 		  
 		End Sub
 	#tag EndMethod
