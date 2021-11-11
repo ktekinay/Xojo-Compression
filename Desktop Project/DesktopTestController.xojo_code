@@ -15,6 +15,8 @@ Inherits TestController
 		  group = new ZstdStreamTests( self, "ZstdSteam" )
 		  group = new ZstdTests( self, "Zstd" )
 		  
+		  group = new AdditionalClassesTests( self, "Additional Classes" )
+		  
 		End Sub
 	#tag EndEvent
 
