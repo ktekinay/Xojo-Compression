@@ -14,6 +14,10 @@ Inherits TestGroup
 
 	#tag Method, Flags = &h21
 		Private Sub Connector_ContentReceived(sender As URLConnectionZstd_MTC, URL As String, HTTPStatus As Integer, content As String)
+		  #pragma unused sender
+		  #pragma unused URL
+		  #pragma unused HTTPStatus
+		  
 		  Assert.Message content
 		  Assert.Pass
 		  

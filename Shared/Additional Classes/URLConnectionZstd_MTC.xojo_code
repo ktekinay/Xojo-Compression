@@ -14,6 +14,11 @@ Inherits URLConnection
 
 	#tag Event
 		Sub FileReceived(URL As String, HTTPStatus As Integer, file As FolderItem)
+		  if not IsSync then
+		    MaybeDecompressFile file
+		  end if
+		  
+		  RaiseEvent FileReceived( URL, HTTPStatus, file )
 		  
 		End Sub
 	#tag EndEvent
@@ -59,11 +64,109 @@ Inherits URLConnection
 		End Function
 	#tag EndMethod
 
+	#tag Method, Flags = &h21
+		Private Sub MaybeDecompressFile(ByRef file As FolderItem)
+		  if not IsZstdCompressed or _
+		    file is nil or not file.Exists or _
+		    file.IsFolder or _
+		    not file.IsReadable or not file.IsWriteable then
+		    //
+		    // Nothing to do
+		    //
+		    return
+		  end if
+		  
+		  //
+		  // Let's try to decompress it
+		  //
+		  var out as FolderItem = FolderItem.TemporaryFile
+		  var bs as BinaryStream = BinaryStream.Create( out, true )
+		  var raiseErr as RuntimeException
+		  
+		  try
+		    var d as new ZstdStreamDecompressor_MTC
+		    
+		    var targetChunkSize as integer = ( 1024 * 1024 * 2 ) + d.RecommendedChunkSize
+		    var chunkSize as integer = targetChunkSize - ( targetChunkSize mod d.RecommendedChunkSize )
+		    
+		    while not bs.EndOfFile
+		      var chunk as string = bs.Read( chunkSize )
+		      d.Write chunk
+		      
+		      chunk = d.ReadAll
+		      bs.Write chunk
+		    wend
+		    
+		    d.Flush
+		    var chunk as string = d.ReadAll
+		    bs.Write chunk
+		    
+		    bs.Close
+		    bs = nil
+		    
+		    //
+		    // Move the temp file to the original
+		    //
+		    var targetFile as new FolderItem( file )
+		    
+		    var baseName as string = targetFile.Name + ".original"
+		    var newName as string = baseName
+		    var indexer as integer
+		    
+		    var targetParent as FolderItem = targetFile.Parent
+		    
+		    while targetParent.Child( newName ).Exists
+		      indexer = indexer + 1
+		      newName = baseName + indexer.ToString
+		    wend
+		    
+		    file.Name = newName
+		    do
+		      file = new FolderItem( targetParent.Child( newName ) )
+		    loop until file.Exists // Just in case we need the OS to catch up
+		    
+		    out.MoveTo targetFile
+		    file.Delete
+		    
+		    out = nil
+		    file = targetFile
+		    
+		  catch err as CompressionException_MTC
+		    //
+		    // Didn't work so we will just return the original file
+		    //
+		    
+		  catch err as RuntimeException
+		    raiseErr = err // Raise this below after cleanup
+		    
+		  end try
+		  
+		  
+		  Cleanup:
+		  
+		  if out isa object and out.Exists and out.NativePath <> file.NativePath then
+		    if bs isa object then
+		      bs.Close
+		      bs = nil
+		    end if
+		    
+		    out.Delete
+		    out = nil
+		  end if
+		  
+		  if raiseErr isa object then
+		    raise raiseErr
+		  end if
+		  
+		End Sub
+	#tag EndMethod
+
 	#tag Method, Flags = &h0
 		Sub SendSync(method As String, URL As String, file As FolderItem, timeout As Integer = 0)
 		  IsSync = true
 		  
 		  super.SendSync( method, URL, file, timeout )
+		  MaybeDecompressFile file
 		  
 		  IsSync = false
 		  
