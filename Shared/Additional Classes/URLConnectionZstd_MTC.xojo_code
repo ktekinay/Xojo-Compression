@@ -3,7 +3,9 @@ Protected Class URLConnectionZstd_MTC
 Inherits URLConnection
 	#tag Event
 		Sub ContentReceived(URL As String, HTTPStatus As Integer, content As String)
-		  content = MaybeDecompressContent( content )
+		  if not IsSync then
+		    content = MaybeDecompressContent( content )
+		  end if
 		  
 		  RaiseEvent ContentReceived( URL, HTTPStatus, content )
 		  
@@ -17,6 +19,19 @@ Inherits URLConnection
 	#tag EndEvent
 
 
+	#tag Method, Flags = &h0
+		Sub Constructor(isZstdOnly As Boolean = False)
+		  var enc as string = kAcceptedEncodings
+		  
+		  if isZstdOnly then
+		    enc = kZstdEncoding
+		  end if
+		  
+		  me.RequestHeader( kHeaderAcceptEncoding ) = enc
+		  
+		End Sub
+	#tag EndMethod
+
 	#tag Method, Flags = &h21
 		Private Function MaybeDecompressContent(content As String) As String
 		  #if DebugBuild
@@ -28,12 +43,15 @@ Inherits URLConnection
 		    #pragma unused headers
 		  #endif
 		  
-		  if IsZstdCompressed then
-		    var actualContent as string = content.MiddleBytes( 15 )
-		    actualContent = actualContent.LeftBytes( actualContent.Bytes - 8 )
-		    
+		  var originalContent as string = content
+		  
+		  if originalContent <> "" and IsZstdCompressed then
 		    var c as new Zstd_MTC
-		    content = c.Decompress( actualContent )
+		    content = c.Decompress( originalContent, originalContent.Encoding )
+		    
+		    if content.Encoding is nil and Encodings.UTF8.IsValidData( content ) then
+		      content = content.DefineEncoding( Encodings.UTF8 )
+		    end if
 		  end if
 		  
 		  return content
@@ -42,42 +60,27 @@ Inherits URLConnection
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Send(method As String, URL As String, file As FolderItem, timeout As Integer = 60)
-		  SetAcceptedEncodings
-		  super.Send( method, URL, file, timeout )
-		  
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub Send(method As String, URL As String, timeout As Integer = 60)
-		  SetAcceptedEncodings
-		  super.Send( method, URL, timeout )
-		  
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Sub SendSync(method As String, URL As String, file As FolderItem, timeout As Integer = 0)
-		  SetAcceptedEncodings
-		  Super.SendSync( method, URL, file, timeout )
+		  IsSync = true
+		  
+		  super.SendSync( method, URL, file, timeout )
+		  
+		  IsSync = false
 		  
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function SendSync(method As String, URL As String, timeout As Integer = 0) As String
-		  SetAcceptedEncodings
+		  IsSync = true
+		  
 		  var content as string = super.SendSync( method, URL, timeout )
+		  content = MaybeDecompressContent( content )
+		  
+		  IsSync = false
+		  
 		  return content
 		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h21
-		Private Sub SetAcceptedEncodings()
-		  me.RequestHeader( kHeaderAcceptEncoding ) = kAcceptedEncodings
-		  
-		End Sub
 	#tag EndMethod
 
 
@@ -90,11 +93,15 @@ Inherits URLConnection
 	#tag EndHook
 
 
+	#tag Property, Flags = &h21
+		Private IsSync As Boolean
+	#tag EndProperty
+
 	#tag ComputedProperty, Flags = &h21
 		#tag Getter
 			Get
 			  var contentEncoding as string = ResponseHeader( kHeaderContentEncoding )
-			  return contentEncoding = kZstdEncoding 
+			  return contentEncoding = kZstdEncoding
 			  
 			End Get
 		#tag EndGetter
@@ -102,7 +109,7 @@ Inherits URLConnection
 	#tag EndComputedProperty
 
 
-	#tag Constant, Name = kAcceptedEncodings, Type = String, Dynamic = False, Default = \"zstd;q\x3D1.0\x2C gzip;q\x3D0.9\x2C deflate;q\x3D0.8", Scope = Private
+	#tag Constant, Name = kAcceptedEncodings, Type = String, Dynamic = False, Default = \"zstd\x2C gzip\x2C deflate", Scope = Private
 	#tag EndConstant
 
 	#tag Constant, Name = kHeaderAcceptEncoding, Type = String, Dynamic = False, Default = \"Accept-Encoding", Scope = Private
